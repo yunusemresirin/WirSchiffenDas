@@ -2,10 +2,10 @@
 left to right direction
 skinparam componentStyle rectangle
 
-title Kontextsicht – WirSchaffenDas Engine Quality Analysis
+title Kontextsicht – WirSchiffenDas Engine Quality Analysis
 
 actor "Ingenieur" as Engineer
-rectangle "WirSchaffenDas\nEngine Quality Analysis" as System
+rectangle "WirSchiffenDas\nEngine Quality Analysis" as System
 
 Engineer --> System : Engine-Konfiguration anlegen/lesen
 Engineer --> System : Qualitätsanalyse starten

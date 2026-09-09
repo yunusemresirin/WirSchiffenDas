@@ -1,4 +1,4 @@
-# WirSchaffenDas – Domain-Driven Design
+# WirSchiffenDas – Domain-Driven Design
 
 ## 1. Ziel
 

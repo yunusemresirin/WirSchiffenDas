@@ -1,4 +1,4 @@
-# WirSchaffenDas – Teststrategie
+# WirSchiffenDas – Teststrategie
 
 ## Ziel
 
@@ -82,7 +82,7 @@ Das Skript prüft zwei Szenarien.
 ## Manuelle Prüfungsdemo
 
 Für die mündliche Präsentation bleibt die Postman-Collection unter
-`postman/WirSchaffenDas.postman_collection.json` bestehen. Sie erlaubt denselben Ablauf sichtbar und schrittweise zu demonstrieren.
+`postman/WirSchiffenDas.postman_collection.json` bestehen. Sie erlaubt denselben Ablauf sichtbar und schrittweise zu demonstrieren.
 
 ## Abdeckung der Qualitätsanforderungen
 
