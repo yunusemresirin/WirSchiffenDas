@@ -1,4 +1,4 @@
-# WirSchaffenDas – Requirements Overview
+# WirSchiffenDas – Requirements Overview
 
 > Kurzfassung der Anforderungen für das Semesterprojekt.
 >

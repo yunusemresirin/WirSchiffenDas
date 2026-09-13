@@ -1,4 +1,4 @@
-# WirSchaffenDas – arc42 Architekturdokumentation
+# WirSchiffenDas – arc42 Architekturdokumentation
 
 **Projekt:** Engine Quality Analysis  
 **Modul:** Service-basierte Komponenten-Architekturen (SEKA)  
@@ -281,7 +281,7 @@ Die vollständige Laufzeitsicht mit Happy Path und Fehlerpfad befindet sich unte
 Jeder Microservice wird als eigenständiger Docker-Container ausgeführt.
 
 ```text
-Docker Host / wirschaffendas-network
+Docker Host / wirschiffendas-network
 |
 |-- configuration-service               :8081
 |-- analysis-management-service          :8082
@@ -463,7 +463,7 @@ Docker Compose erleichtert die reproduzierbare Demonstration und macht Independe
 - `docs/diagrams/runtime.puml` – Laufzeitsicht
 - `docs/diagrams/deployment.puml` – Verteilungssicht
 - `docs/testing.md` – Teststrategie
-- `postman/WirSchaffenDas.postman_collection.json` – Prüfungsdemo
+- `postman/WirSchiffenDas.postman_collection.json` – Prüfungsdemo
 - `scripts/e2e.sh` – automatisierter Systemtest
 
 ### Quellenbasis der Aufgabenstellung

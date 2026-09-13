@@ -1,4 +1,4 @@
-# WirSchaffenDas – Architekturentwurf
+# WirSchiffenDas – Architekturentwurf
 
 ## 1. Ziel
 
@@ -138,7 +138,7 @@ Damit wird die technische Anforderung Docker/Docker Compose direkt im Prototyp u
 
 ## 12. Postman-Demonstration
 
-Die Collection `postman/WirSchaffenDas.postman_collection.json` deckt die wichtigsten Use Cases ab: Konfiguration anlegen/lesen, Analyse starten/abfragen und Retry eines fehlgeschlagenen Algorithmus.
+Die Collection `postman/WirSchiffenDas.postman_collection.json` deckt die wichtigsten Use Cases ab: Konfiguration anlegen/lesen, Analyse starten/abfragen und Retry eines fehlgeschlagenen Algorithmus.
 
 Für die Fehlerdemo wird beispielsweise `thermal-analysis-service` gestoppt. Der Circuit Breaker macht den Fehler im Analysezustand sichtbar; nach Neustart wird nur `THERMAL` wiederholt und die Choreographie ab dort fortgeführt.
 

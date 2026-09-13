@@ -1,4 +1,4 @@
-# WirSchaffenDas – 4-Sichten-Modell
+# WirSchiffenDas – 4-Sichten-Modell
 
 Die Architektur wird ergänzend zu `ddd.md` und `architecture.md` in vier kompakten Sichten dokumentiert. Die Diagramme liegen als PlantUML-Dateien unter `docs/diagrams/` und können direkt gerendert werden.
 
