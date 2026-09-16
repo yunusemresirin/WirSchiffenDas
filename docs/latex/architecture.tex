@@ -1,4 +1,4 @@
-\documentclass[9pt,a4paper]{article}
+\documentclass[9pt,a4paper]{extarticle}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[ngerman]{babel}
@@ -181,12 +181,12 @@ Configuration Management und Analysis Management besitzen ihre Daten selbst. Die
 Analysis Management erzeugt den \code{AnalysisRun} und startet ausschließlich den Anchor-Algorithmus \emph{Fluid}. Nach erfolgreichem Abschluss gibt jeder Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Damit entsteht eine sequenzielle Choreographie. Engine Management steht bewusst am Ende, da seine Analyse exemplarisch auf vorherigen Ergebnissen aufbaut. Jeder Schritt meldet \code{RUNNING} sowie abschließend \code{READY/OK} oder \code{FAILED} zurück.
 
 \begin{center}
-\begin{tikzpicture}[node distance=4mm and 8mm,every node/.style={font=\scriptsize},step/.style={draw,rounded corners,fill=lightblue,minimum width=23mm,minimum height=7mm,align=center},fail/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=23mm,minimum height=7mm,align=center}]
-\node[step] (am) {Analysis Mgmt};
-\node[step,right=of am] (f) {Fluid};
-\node[step,right=of f] (t) {Thermal};
-\node[step,right=of t] (e) {Electrical};
-\node[step,right=of e] (m) {Engine Mgmt};
+\begin{tikzpicture}[node distance=4mm and 8mm,every node/.style={font=\scriptsize},runtimeStep/.style={draw,rounded corners,fill=lightblue,minimum width=23mm,minimum height=7mm,align=center},fail/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=23mm,minimum height=7mm,align=center}]
+\node[runtimeStep] (am) {Analysis Mgmt};
+\node[runtimeStep,right=of am] (f) {Fluid};
+\node[runtimeStep,right=of f] (t) {Thermal};
+\node[runtimeStep,right=of t] (e) {Electrical};
+\node[runtimeStep,right=of e] (m) {Engine Mgmt};
 \draw[-{Latex}] (am) -- node[above]{start} (f);
 \draw[-{Latex}] (f) -- (t);
 \draw[-{Latex}] (t) -- (e);
