@@ -25,6 +25,8 @@ export interface AlgorithmExecution {
   status: AnalysisStatus;
   result: AnalysisResult | null;
   message: string | null;
+  attemptId: string | null;
+  equipmentResults: Record<string, AnalysisResult>;
 }
 
 export interface AnalysisResponse {
@@ -51,6 +53,13 @@ export interface CircuitBreakerSnapshot {
   notPermittedCalls?: number;
 }
 
+export type CircuitBreakerName =
+  | 'startFluid'
+  | 'startThermal'
+  | 'startElectrical'
+  | 'startEngineManagement'
+  | 'nextService';
+
 export type ServiceKey =
   | 'configuration'
   | 'analysis-management'
@@ -63,6 +72,7 @@ export interface ServiceHealth {
   key: ServiceKey;
   reachable: boolean;
   actuatorStatus: string;
-  circuitBreaker: CircuitBreakerSnapshot | null;
+  circuitBreakers: Partial<Record<CircuitBreakerName, CircuitBreakerSnapshot>>;
+  error?: string;
   checkedAt: string;
 }

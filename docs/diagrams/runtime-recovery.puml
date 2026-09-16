@@ -1,0 +1,43 @@
+@startuml
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam sequenceMessageAlign center
+hide footbox
+actor "Ingenieur" as U
+participant "Management" as M
+participant "Fluid" as F
+participant "Thermal" as T
+participant "Restkette" as Rest
+F -> T : Command (Versuch A)
+alt Eindeutig nicht angenommen
+  T --> F : Verbindung abgelehnt / 4xx
+  F -> M : THERMAL FAILED (A)
+else Annahme unklar / Rückmeldung verloren
+  T --> F : Antwortverlust / 5xx
+  note over F, M : Keine widersprüchliche Fehlermeldung erzwingen
+  alt Rückmeldung kommt rechtzeitig
+    T -> M : gültiger Fortschritt (A)
+  else 30 Sekunden kein Fortschritt
+    M -> M : Watchdog: ersten offenen Schritt FAILED
+  end
+end
+note over U, M : Nur bei FAILED: Ursache beheben, Retry starten
+U -> M : Retry THERMAL
+M -> M : Transaktion + Zeilensperre
+M -> M : FLUID erhalten; THERMAL/Rest Versuch B
+M -> T : Command (B, FLUID=OK)
+T --> M : 202
+U -> M : zweiter Retry während Versuch B
+M --> U : 409, Ziel nicht mehr FAILED
+T -> M : RUNNING / Ergebnis (B)
+T -> Rest : Weitergabe (B)
+Rest -> M : aktuelle Ergebnisse (B)
+T -> M : verspäteter Callback (A)
+M --> T : 204, keine Änderung
+note over F, T
+  Fluid→Thermal-Breaker und Management→Thermal-Breaker
+  haben getrennte Zustände. Retry prüft nur seine Kante.
+end note
+@enduml

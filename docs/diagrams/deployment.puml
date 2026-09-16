@@ -1,58 +1,41 @@
 @startuml
-skinparam componentStyle rectangle
-
-title Verteilungssicht – Docker Compose Deployment
-
-actor "Ingenieur\nWeb Browser" as Browser
-
-node "Entwicklungsrechner / Docker Host" as Host {
-    node "Docker Compose\nwirschiffendas-network" as Network {
-        node "web-ui\nNginx + React SPA\nHost :3000 -> Container :80" as WebUI
-        node "configuration-service\nContainer :8081" as Configuration
-        node "analysis-management-service\nContainer :8082" as Management
-        node "fluid-analysis-service\nContainer :8083" as Fluid
-        node "thermal-analysis-service\nContainer :8084" as Thermal
-        node "electrical-analysis-service\nContainer :8085" as Electrical
-        node "engine-management-analysis-service\nContainer :8086" as Engine
-    }
-
-    artifact "configuration-data\nDocker Volume" as ConfigVolume
-    artifact "analysis-data\nDocker Volume" as AnalysisVolume
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam packageStyle rectangle
+top to bottom direction
+node "Arbeitsplatz" as Client {
+  artifact "Browser / React" as Browser
 }
-
-Browser --> WebUI : HTTP :3000
-WebUI --> Configuration : /api/configurations\nReverse Proxy
-WebUI --> Management : /api/analyses\nReverse Proxy
-WebUI ..> Configuration : /monitor/.../actuator/health
-WebUI ..> Management : Actuator / CB Health
-WebUI ..> Fluid : Actuator / CB Health
-WebUI ..> Thermal : Actuator / CB Health
-WebUI ..> Electrical : Actuator / CB Health
-WebUI ..> Engine : Actuator Health
-
-Configuration --> ConfigVolume : H2-Datei
-Management --> AnalysisVolume : H2-Datei
-
-Management --> Configuration : HTTP / Compose DNS
-Management --> Fluid : HTTP / Compose DNS\nCircuit Breaker
-Fluid --> Thermal : HTTP + Circuit Breaker
-Thermal --> Electrical : HTTP + Circuit Breaker
-Electrical --> Engine : HTTP + Circuit Breaker
-
-Fluid --> Management : Callback REST
-Thermal --> Management : Callback REST
-Electrical --> Management : Callback REST
-Engine --> Management : Callback REST
-
-note bottom of WebUI
-  Presentation Adapter
-  React + Material UI + Vite Build
-  Nginx Runtime / Reverse Proxy
+node "Ein Docker-Host · Compose-Netzwerk" as Host {
+  node "web-ui\nNginx :80" as UI
+  node "configuration-service\nSpring Boot :8081" as C
+  node "analysis-management-service\nSpring Boot :8082" as M
+  frame "Vier separate Worker-Container" as W {
+    node "fluid-analysis-service\n:8083" as F
+    node "thermal-analysis-service\n:8084" as T
+    node "electrical-analysis-service\n:8085" as E
+    node "engine-management-analysis-service\n:8086" as EM
+    F -[hidden]right- T
+    E -[hidden]right- EM
+    F -[hidden]down- E
+    T -[hidden]down- EM
+  }
+  database "Volume configuration-data\nH2-Datei" as CD
+  database "Volume analysis-data\nH2-Datei" as MD
+}
+Browser --> UI : HTTP localhost:3000
+UI --> C : REST / DNS
+UI --> M : REST / DNS
+C --> CD : /app/data
+M --> MD : /app/data
+M --> W : Anker / Retry
+W --> M : Callbacks
+note bottom of W
+  Interne REST-Kette: F → T → E → EM
+  Backendports 8081–8086 auch am Host
+  Readiness-Checks für alle Backends
 end note
-
-note bottom of Network
-  Jeder Backend-Microservice ist separat containerisiert
-  und kann unabhängig gestoppt/gestartet werden.
-end note
-
 @enduml

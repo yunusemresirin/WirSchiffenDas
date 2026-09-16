@@ -26,8 +26,8 @@ services:
 
 resilience4j:
   circuitbreaker:
-    instances:
-      analysisServiceStarter:
+    configs:
+      default:
         sliding-window-size: 2
         minimum-number-of-calls: 1
         permitted-number-of-calls-in-half-open-state: 1
@@ -36,6 +36,25 @@ resilience4j:
         automatic-transition-from-open-to-half-open-enabled: true
         register-health-indicator: true
         event-consumer-buffer-size: 10
+    instances:
+      startFluid:
+        base-config: default
+      startThermal:
+        base-config: default
+      startElectrical:
+        base-config: default
+      startEngineManagement:
+        base-config: default
+
+http:
+  client:
+    connect-timeout: 2s
+    read-timeout: 5s
+
+analysis:
+  timeout:
+    inactivity: 30s
+    scan-interval-ms: 1000
 
 management:
   health:
@@ -44,6 +63,8 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
   endpoints:
     web:
       exposure:

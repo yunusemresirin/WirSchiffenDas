@@ -1,13 +1,12 @@
 import type {
   AnalysisResponse,
   AlgorithmName,
-  CircuitBreakerSnapshot,
-  CircuitBreakerState,
   CreateConfigurationRequest,
   EngineConfiguration,
   ServiceHealth,
   ServiceKey,
 } from './types';
+import { parseServiceHealth } from './health';
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -21,8 +20,20 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `${response.status} ${response.statusText}`);
+    const text = await response.text();
+    let message = `Anfrage fehlgeschlagen (HTTP ${response.status}).`;
+    if (response.status === 502 || response.status === 504) {
+      message = 'Der Service ist gerade nicht erreichbar. Bitte später erneut versuchen.';
+    } else {
+      try {
+        const body = JSON.parse(text) as Record<string, unknown>;
+        const detail = body.detail ?? body.message ?? body.error;
+        if (typeof detail === 'string') message = detail;
+      } catch {
+        if (text && !text.trimStart().startsWith('<')) message = text;
+      }
+    }
+    throw new Error(message);
   }
 
   return response.json() as Promise<T>;
@@ -75,48 +86,6 @@ const serviceKeys: ServiceKey[] = [
   'engine-management',
 ];
 
-const breakerStates = new Set<CircuitBreakerState>([
-  'CLOSED',
-  'OPEN',
-  'HALF_OPEN',
-  'DISABLED',
-  'FORCED_OPEN',
-  'METRICS_ONLY',
-]);
-
-function findCircuitBreaker(value: unknown): CircuitBreakerSnapshot | null {
-  if (!value || typeof value !== 'object') {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const state = record.state;
-
-  if (typeof state === 'string' && breakerStates.has(state as CircuitBreakerState)) {
-    return {
-      state: state as CircuitBreakerState,
-      failureRate: record.failureRate as string | number | undefined,
-      bufferedCalls:
-        typeof record.bufferedCalls === 'number' ? record.bufferedCalls : undefined,
-      failedCalls:
-        typeof record.failedCalls === 'number' ? record.failedCalls : undefined,
-      notPermittedCalls:
-        typeof record.notPermittedCalls === 'number'
-          ? record.notPermittedCalls
-          : undefined,
-    };
-  }
-
-  for (const child of Object.values(record)) {
-    const result = findCircuitBreaker(child);
-    if (result) {
-      return result;
-    }
-  }
-
-  return null;
-}
-
 async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 1500);
@@ -128,28 +97,16 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
     });
 
     const text = await response.text();
-    const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-
-    // A Resilience4j OPEN breaker intentionally makes Actuator health DOWN/503.
-    // Receiving an HTTP response still proves that the source service itself is reachable.
-    return {
-      key,
-      reachable: true,
-      actuatorStatus:
-        typeof payload.status === 'string'
-          ? payload.status
-          : response.ok
-            ? 'UP'
-            : 'DOWN',
-      circuitBreaker: findCircuitBreaker(payload),
-      checkedAt: new Date().toISOString(),
-    };
+    let payload: unknown = null;
+    try { payload = JSON.parse(text); } catch { /* Proxy errors may return HTML. */ }
+    return parseServiceHealth(key, response.status, payload);
   } catch {
     return {
       key,
       reachable: false,
       actuatorStatus: 'UNREACHABLE',
-      circuitBreaker: null,
+      circuitBreakers: {},
+      error: 'Service antwortet nicht innerhalb der Prüfzeit.',
       checkedAt: new Date().toISOString(),
     };
   } finally {

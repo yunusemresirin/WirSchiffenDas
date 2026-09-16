@@ -1,59 +1,47 @@
 @startuml
-title Laufzeitsicht – Analyse, Fehler und Retry
-
-autonumber
-actor Ingenieur as User
-participant "analysis-management-service" as Management
-participant "configuration-service" as Configuration
-participant "fluid-analysis-service" as Fluid
-participant "thermal-analysis-service" as Thermal
-participant "electrical-analysis-service" as Electrical
-participant "engine-management-analysis-service" as Engine
-
-User -> Management : POST /api/analyses\n(configurationId)
-Management -> Configuration : GET /api/configurations/{id}
-Configuration --> Management : Engine Configuration
-Management -> Management : AnalysisRun anlegen\nFLUID = RUNNING
-Management -> Fluid : POST /internal/analyses
-Management --> User : 202 Accepted + analysisId
-
-Fluid -> Management : RUNNING
-Fluid -> Fluid : Analyse simulieren
-Fluid -> Management : READY / OK
-Fluid -> Thermal : POST /internal/analyses
-
-alt Thermal erreichbar
-    Thermal -> Management : RUNNING
-    Thermal -> Thermal : Analyse simulieren
-    Thermal -> Management : READY / OK
-    Thermal -> Electrical : POST /internal/analyses
-
-    Electrical -> Management : RUNNING
-    Electrical -> Electrical : Analyse simulieren
-    Electrical -> Management : READY / OK
-    Electrical -> Engine : POST /internal/analyses
-
-    Engine -> Management : RUNNING
-    Engine -> Engine : Konfiguration + previousResults prüfen
-    Engine -> Management : READY / OK
-    Management -> Management : overallResult = OK
-else Thermal nicht erreichbar
-    Fluid -> Fluid : Circuit Breaker / Fallback
-    Fluid -> Management : THERMAL = FAILED
-    Management -> Management : overallResult = FAILED
-
-    User -> Management : POST .../THERMAL/retry
-    Management -> Thermal : POST /internal/analyses
-    Management --> User : 202 Accepted
-    Thermal -> Management : RUNNING
-    Thermal -> Management : READY / OK
-    Thermal -> Electrical : Choreographie fortsetzen
-    Electrical -> Engine : Choreographie fortsetzen
-    Engine -> Management : READY / OK
-    Management -> Management : overallResult = OK
-end
-
-User -> Management : GET /api/analyses/{analysisId}
-Management --> User : Status + Einzelresultate + Overall Result
-
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam sequenceMessageAlign center
+hide footbox
+participant "Web UI" as UI
+participant "Management" as M
+participant "Configuration" as C
+participant "Fluid" as F
+participant "Thermal" as T
+participant "Electrical" as E
+participant "Engine" as EM
+UI -> M : POST Analyse
+M -> C : Konfiguration lesen
+C --> M : Konfiguration
+M -> M : Lauf + attemptId speichern
+M -> F : Command(analysisId, attemptId)
+F --> M : 202 Accepted
+M --> UI : 202 + analysisId
+note over F, EM : Berechnung asynchron; HTTP-Aufrufe synchron
+F -> M : RUNNING
+F -> F : Öl / Kraftstoff prüfen
+F -> M : READY/OK + 2 Resultate
+M --> F : 204
+F -> T : Command + FLUID=OK
+T --> F : 202
+T -> M : RUNNING
+T -> T : Kühlung prüfen
+T -> M : READY/OK + Resultat
+M --> T : 204
+T -> E : Command + Vorgänger
+E --> T : 202
+E -> M : RUNNING
+E -> E : Elektrik prüfen
+E -> M : READY/OK + Resultat
+M --> E : 204
+E -> EM : Command + 3 Vorgänger
+EM --> E : 202
+EM -> M : RUNNING
+EM -> EM : 3 Vorgänger + Motorsteuerung prüfen
+EM -> M : READY/OK + Resultat
+M -> M : Gesamt-OK nur bei Vollständigkeit
+UI -> M : Status abrufen
+M --> UI : 4 Schritte / 5 Equipmentresultate
 @enduml

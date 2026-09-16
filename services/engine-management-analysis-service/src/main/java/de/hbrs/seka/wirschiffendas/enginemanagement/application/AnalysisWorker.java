@@ -2,30 +2,92 @@ package de.hbrs.seka.wirschiffendas.enginemanagement.application;
 
 import de.hbrs.seka.wirschiffendas.enginemanagement.api.AnalysisCommand;
 import de.hbrs.seka.wirschiffendas.enginemanagement.infrastructure.AnalysisManagementClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class AnalysisWorker {
+    private static final Logger log = LoggerFactory.getLogger(AnalysisWorker.class);
     private static final String ALGORITHM = "ENGINE_MANAGEMENT";
+    private static final List<String> EQUIPMENT = List.of("engineManagementSystem");
+
     private final AnalysisManagementClient managementClient;
-    public AnalysisWorker(AnalysisManagementClient managementClient) { this.managementClient = managementClient; }
+    private final CommandRegistry registry;
+    private final Duration processingDelay;
+
+    public AnalysisWorker(AnalysisManagementClient managementClient, CommandRegistry registry,
+                          @Value("${worker.processing-delay:PT2S}") Duration processingDelay) {
+        if (processingDelay.isNegative()) throw new IllegalArgumentException("Processing delay cannot be negative");
+        this.managementClient = managementClient;
+        this.registry = registry;
+        this.processingDelay = processingDelay;
+    }
+
     @Async
     public void execute(AnalysisCommand command) {
-        managementClient.reportStatus(command.analysisId(), ALGORITHM, "RUNNING", null);
-        if (!pause(command.analysisId())) return;
-        boolean previousOk = command.previousResults().stream().noneMatch(result -> "FAILED".equalsIgnoreCase(result.get("result")));
-        boolean configOk = valid(command.configuration().get("engineManagementSystem"));
-        boolean ok = previousOk && configOk;
-        managementClient.reportResult(command.analysisId(), ALGORITHM, ok ? "READY" : "FAILED", ok ? "OK" : "FAILED", null);
+        if (!registry.begin(command.analysisId(), command.attemptId())) return;
+        try {
+            managementClient.reportStatus(command.analysisId(), command.attemptId(), ALGORITHM, "RUNNING", "Analysis started");
+            if (!validPreviousResults(command)) {
+                managementClient.reportStatus(command.analysisId(), command.attemptId(), ALGORITHM, "FAILED",
+                        "Engine management requires exactly one OK result from FLUID, THERMAL and ELECTRICAL");
+                return;
+            }
+            if (!pause(command)) return;
+
+            Map<String, String> equipmentResults = new LinkedHashMap<>();
+            for (String equipment : EQUIPMENT) {
+                equipmentResults.put(equipment, valid(command.configuration().get(equipment)) ? "OK" : "FAILED");
+            }
+            List<String> failedEquipment = equipmentResults.entrySet().stream()
+                    .filter(entry -> "FAILED".equals(entry.getValue())).map(Map.Entry::getKey).toList();
+            boolean ok = failedEquipment.isEmpty();
+            String result = ok ? "OK" : "FAILED";
+            String message = ok ? "All equipment checks passed"
+                    : "Invalid or missing equipment: " + String.join(", ", failedEquipment);
+            managementClient.reportResult(command.analysisId(), command.attemptId(), ALGORITHM,
+                    ok ? "READY" : "FAILED", result, message, equipmentResults);
+        } catch (RestClientException exception) {
+            // Delivery may have succeeded remotely. Do not send a contradictory result or continue the chain.
+            log.warn("Stopping {} for analysis {} attempt {} after a delivery failure; management timeout handles recovery",
+                    ALGORITHM, command.analysisId(), command.attemptId(), exception);
+        } finally {
+            registry.complete(command.analysisId(), command.attemptId());
+        }
     }
-    private boolean pause(String analysisId) {
-        try { Thread.sleep(2000); return true; }
-        catch (InterruptedException exception) {
+
+    private boolean pause(AnalysisCommand command) {
+        try {
+            Thread.sleep(processingDelay.toMillis());
+            return true;
+        } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            managementClient.reportResult(analysisId, ALGORITHM, "FAILED", "FAILED", "Analysis interrupted");
+            managementClient.reportStatus(command.analysisId(), command.attemptId(), ALGORITHM, "FAILED", "Analysis interrupted");
             return false;
         }
     }
-    private boolean valid(String value) { return value != null && !"INVALID".equalsIgnoreCase(value); }
+
+    private boolean valid(String value) {
+        return value != null && !value.isBlank() && !"INVALID".equalsIgnoreCase(value.trim());
+    }
+
+    private boolean validPreviousResults(AnalysisCommand command) {
+        if (command.previousResults().size() != 3) return false;
+        var required = new java.util.HashSet<>(java.util.Set.of("FLUID", "THERMAL", "ELECTRICAL"));
+        for (Map<String, String> previous : command.previousResults()) {
+            if (previous == null || !"OK".equals(previous.get("result")) || !required.remove(previous.get("algorithm"))) {
+                return false;
+            }
+        }
+        return required.isEmpty();
+    }
 }

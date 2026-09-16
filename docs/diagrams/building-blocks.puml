@@ -1,65 +1,41 @@
 @startuml
-left to right direction
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
 skinparam componentStyle rectangle
-
-title Bausteinsicht – WirSchiffenDas Engine Quality Analysis
-
-actor "Ingenieur" as Engineer
-actor "Postman\n(Test-Client)" as Postman
-
-component "web-ui\nReact + Material UI + Vite" as WebUI
-component "configuration-service" as Configuration
-component "analysis-management-service" as Management
-component "fluid-analysis-service" as Fluid
-component "thermal-analysis-service" as Thermal
-component "electrical-analysis-service" as Electrical
-component "engine-management-analysis-service" as Engine
-
-database "Configuration DB" as ConfigDb
-database "Analysis DB" as AnalysisDb
-
-Engineer --> WebUI : Browser
-WebUI --> Configuration : REST\nKonfiguration anlegen/lesen
-WebUI --> Management : REST\nAnalyse starten/status/retry
-Postman --> Configuration : REST (Test)
-Postman --> Management : REST (Test)
-
-Configuration --> ConfigDb : besitzt / persistiert
-Management --> AnalysisDb : besitzt / persistiert
-
-Management --> Configuration : Konfiguration laden
-Management --> Fluid : Anchor starten
-Fluid --> Thermal : Choreographie
-Thermal --> Electrical : Choreographie
-Electrical --> Engine : Choreographie
-
-Fluid --> Management : Status / Resultat
-Thermal --> Management : Status / Resultat
-Electrical --> Management : Status / Resultat
-Engine --> Management : Status / Resultat
-
-WebUI ..> Configuration : Actuator Health\nvia Reverse Proxy
-WebUI ..> Management : Actuator / CB State
-WebUI ..> Fluid : Actuator / CB State
-WebUI ..> Thermal : Actuator / CB State
-WebUI ..> Electrical : Actuator / CB State
-WebUI ..> Engine : Actuator Health
-
-note bottom of WebUI
-  Präsentationskomponente
-  keine Ablauf-Orchestration
+skinparam packageStyle rectangle
+top to bottom direction
+component "Web UI\nReact / Nginx" as UI
+component "Configuration\nAPI / Anwendung / Domäne" as C
+component "Analysis Management\nAPI / Anwendung / Domäne" as M
+database "Configuration DB" as CD
+database "Analysis DB" as MD
+package "Analyse-Worker" as Workers {
+  component "Fluid\nÖl + Kraftstoff" as F
+  component "Thermal\nKühlung" as T
+  component "Electrical\nElektrik" as E
+  component "Engine Management\nMotorsteuerung + Vorgänger" as EM
+  F --> T : REST-Command
+  T --> E : REST-Command
+  E --> EM : REST-Command
+}
+UI --> C : REST
+UI --> M : REST
+M --> C : Konfiguration lesen
+C --> CD : JPA
+M --> MD : JPA
+M --> F : Ankerstart
+M ..> Workers : Retry an Ziel
+Workers --> M : Status / Ergebnisse
+note right of Workers
+  Jeder Worker meldet an Management.
+  Keine eigene Datenbank.
+  Lokale Deduplikation im RAM.
 end note
-note bottom of Fluid
-  stateless
+note top of UI
+  Monitoring über Nginx
+  zu allen sechs Backends
 end note
-note bottom of Thermal
-  stateless
-end note
-note bottom of Electrical
-  stateless
-end note
-note bottom of Engine
-  stateless
-end note
-
 @enduml

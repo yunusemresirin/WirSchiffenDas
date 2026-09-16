@@ -1,0 +1,27 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam packageStyle rectangle
+top to bottom direction
+rectangle "Configuration Management\nU: Konfigurationsmodell" as C
+rectangle "Analysis Management\nAuftragszustand / Retry" as M
+package "Analysefähigkeiten\nContext-Grenzen als Entwurfsannahme" as A {
+  rectangle "Fluid / Thermal / Electrical\nU: Voranalyseergebnisse" as Pre
+  rectangle "Engine Management\nD: benötigt drei Vorgänger" as Engine
+  Pre --> Engine : Published Language\nAlgorithmus + Resultat
+}
+C --> M : U → D\nREST / Published Language
+M <--> A : Partnership im Entwurf\nCommand / Status / Ergebnis
+note left of M
+  Lokales Transport-DTO;
+  keine ausgeprägte ACL
+end note
+note bottom of A
+  U/D = fachliche Vertragsabhängigkeit.
+  Keine vollständige HTTP-Aufrufdarstellung.
+  Worker besitzen keine reichen Domain-Modelle.
+end note
+@enduml

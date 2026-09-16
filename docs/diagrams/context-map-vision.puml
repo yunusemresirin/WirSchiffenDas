@@ -1,0 +1,27 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam packageStyle rectangle
+title Unternehmensvision aus Übung 4 · konzeptionell
+top to bottom direction
+rectangle "Oracle CRM\nextern / Upstream" as CRM
+rectangle "SAP ERP\nextern / Upstream" as ERP
+rectangle "Customer / Sales\nDownstream" as Sales
+rectangle "Order Fulfillment\nBestellprozess" as Orders
+package "Im Prototyp realisierter Ausschnitt" #E7F2E8 {
+  rectangle "Configuration" as C
+  rectangle "Analysis Management\n+ vier Analysefähigkeiten" as A
+}
+CRM --> Sales : geplante ACL\nModellübersetzung
+Sales --> Orders : geplanter Vertrag\nBestellung
+ERP --> Orders : geplante ACL\nERP-Begriffe
+Orders <--> C : geplante Partnership\nProduktspezifikation
+C --> A : implementierter REST-Vertrag
+note bottom of Orders
+  Unternehmensintegration, ACLs und
+  Order Fulfillment sind nicht implementiert.
+end note
+@enduml

@@ -8,18 +8,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class AnalysisController {
-
     private final AnalysisApplicationService service;
-
-    public AnalysisController(AnalysisApplicationService service) {
-        this.service = service;
-    }
+    public AnalysisController(AnalysisApplicationService service) { this.service = service; }
 
     @PostMapping("/api/analyses")
-    public ResponseEntity<AnalysisResponse> start(
-            @Valid @RequestBody StartAnalysisRequest request) {
-        return ResponseEntity.accepted()
-                .body(AnalysisResponse.from(service.start(request.configurationId())));
+    public ResponseEntity<AnalysisResponse> start(@Valid @RequestBody StartAnalysisRequest request) {
+        return ResponseEntity.accepted().body(AnalysisResponse.from(service.start(request.configurationId())));
     }
 
     @GetMapping("/api/analyses/{analysisId}")
@@ -28,33 +22,23 @@ public class AnalysisController {
     }
 
     @PostMapping("/api/analyses/{analysisId}/algorithms/{algorithm}/retry")
-    public ResponseEntity<AnalysisResponse> retry(
-            @PathVariable String analysisId,
-            @PathVariable AlgorithmName algorithm) {
-        return ResponseEntity.accepted()
-                .body(AnalysisResponse.from(service.retry(analysisId, algorithm)));
+    public ResponseEntity<AnalysisResponse> retry(@PathVariable String analysisId,
+                                                 @PathVariable AlgorithmName algorithm) {
+        return ResponseEntity.accepted().body(AnalysisResponse.from(service.retry(analysisId, algorithm)));
     }
 
     @PutMapping("/internal/analyses/{analysisId}/algorithms/{algorithm}/status")
-    public AnalysisResponse updateStatus(
-            @PathVariable String analysisId,
-            @PathVariable AlgorithmName algorithm,
-            @Valid @RequestBody StatusUpdateRequest request) {
-        return AnalysisResponse.from(
-                service.updateStatus(analysisId, algorithm, request.status(), request.message()));
+    public ResponseEntity<Void> updateStatus(@PathVariable String analysisId, @PathVariable AlgorithmName algorithm,
+                                             @Valid @RequestBody StatusUpdateRequest request) {
+        service.updateStatus(analysisId, algorithm, request.attemptId(), request.status(), request.message());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/internal/analyses/{analysisId}/algorithms/{algorithm}/result")
-    public AnalysisResponse updateResult(
-            @PathVariable String analysisId,
-            @PathVariable AlgorithmName algorithm,
-            @Valid @RequestBody ResultUpdateRequest request) {
-        return AnalysisResponse.from(
-                service.updateResult(
-                        analysisId,
-                        algorithm,
-                        request.status(),
-                        request.result(),
-                        request.message()));
+    public ResponseEntity<Void> updateResult(@PathVariable String analysisId, @PathVariable AlgorithmName algorithm,
+                                             @Valid @RequestBody ResultUpdateRequest request) {
+        service.updateResult(analysisId, algorithm, request.attemptId(), request.status(), request.result(),
+                request.message(), request.equipmentResults());
+        return ResponseEntity.noContent().build();
     }
 }

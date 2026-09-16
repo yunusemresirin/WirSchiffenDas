@@ -1,153 +1,85 @@
-# WirSchiffenDas – Architekturentwurf
+# WirSchiffenDas – Architektur und Integrationsverträge
 
-## 1. Ziel
+Stand: 16. September 2026. Kompakter Überblick: [arc42.md](arc42.md). Dieses Dokument beschreibt den implementierten Vertrag, keine geplante Zielarchitektur.
 
-Dieses Dokument konkretisiert die in `requirements.md` und `ddd.md` festgelegten Anforderungen und Bounded Contexts in eine umsetzbare Microservice-Architektur. Es werden keine neuen fachlichen Anforderungen eingeführt.
+## Ablauf und Verantwortlichkeiten
 
-## 2. Service-Baseline
+Die sechs Backendservices bleiben erhalten. Configuration speichert Eingaben; Analysis Management speichert den Analysezustand und startet Fluid als Anker. Die normale Weitergabe erfolgt durch `Fluid → Thermal → Electrical → Engine Management`. Alle Worker melden an Management zurück. Ein angeforderter Retry startet direkt am fehlgeschlagenen Ziel; danach läuft dieselbe Choreographie weiter.
 
-- `configuration-service`
-- `analysis-management-service`
-- `fluid-analysis-service`
-- `thermal-analysis-service`
-- `electrical-analysis-service`
-- `engine-management-analysis-service`
+React zeigt Status und Einzelresultate an. Nginx liefert die Oberfläche und leitet deren API-/Monitoring-Anfragen weiter. Postman ist ein alternativer Client; die Oberfläche entscheidet nicht über Folgeschritte.
 
-## 3. Choreographie
+## REST-Schnittstellen
 
-Version 1 verwendet eine sequenzielle Choreographie:
+| Endpunkt | Bedeutung |
+|---|---|
+| `POST /api/configurations` | neue Konfiguration speichern |
+| `GET /api/configurations/{configurationId}` | gespeicherte Konfiguration lesen |
+| `POST /api/analyses` | Lauf starten; Body enthält `configurationId`, Antwort `202` |
+| `GET /api/analyses/{analysisId}` | Zustand einschließlich Ergebnisdetails lesen |
+| `POST /api/analyses/{analysisId}/algorithms/{algorithm}/retry` | fehlgeschlagenen Schritt erneut starten; `202` bzw. bei Zustandskonflikt `409` |
+| `POST /internal/analyses` | asynchronen Workerauftrag annehmen |
+| `PUT /internal/analyses/{analysisId}/algorithms/{algorithm}/status` | `RUNNING` oder technisches `FAILED` melden |
+| `PUT /internal/analyses/{analysisId}/algorithms/{algorithm}/result` | terminales Ergebnis mit Equipmentdetails melden |
 
-```text
-Client -> Analysis Management -> Fluid -> Thermal -> Electrical -> Engine Management
+Interne Endpunkte sind im lokalen Demonstrator erreichbar, aber nicht authentifiziert. URLs sind unversioniert. Ein inkompatibler Vertragswechsel benötigt eine Versionierungs-/Migrationsstrategie.
+
+Ein Worker-Command enthält `analysisId`, `attemptId`, `configuration` und `previousResults`. Die Konfiguration enthält ihre ID und fünf Equipmentfelder. Ein Vorgängerresultat besteht aus `algorithm` und `result`; Equipmentdetails liegen im Management. Worker ergänzen das eigene Algorithmusergebnis bei der Weitergabe.
+
+Beispiel eines Fluid-Ergebnis-Callbacks:
+
+```json
+{
+  "attemptId": "UUID-des-aktuellen-Versuchs",
+  "status": "FAILED",
+  "result": "FAILED",
+  "message": "Invalid or missing equipment: fuelSystem",
+  "equipmentResults": { "oilSystem": "OK", "fuelSystem": "FAILED" }
+}
 ```
 
-`Analysis Management` erzeugt den Analyse-Durchlauf und startet nur den Anchor-Algorithmus `FLUID`. Anschließend gibt jeder erfolgreich abgeschlossene Analyse-Service die Verarbeitung selbst an den nächsten Service weiter.
+Ein technischer Fehler wird über den Statusvertrag gemeldet und erfindet keine Equipmentergebnisse. Callback-Antwort `204` bedeutet, dass die Meldung bearbeitet wurde; eine alte oder bereits terminale Ausführung kann dabei bewusst unverändert bleiben.
 
-Jeder Analyse-Service:
+## Ergebnisregeln
 
-1. meldet `RUNNING` proaktiv an Analysis Management,
-2. simuliert seine Analyse asynchron,
-3. meldet `READY/OK` oder `FAILED/FAILED`,
-4. startet bei Erfolg den nächsten Analyse-Service.
+| Algorithmus | Exakt erforderliche Equipment-Schlüssel |
+|---|---|
+| `FLUID` | `oilSystem`, `fuelSystem` |
+| `THERMAL` | `coolingSystem` |
+| `ELECTRICAL` | `electricalSystem` |
+| `ENGINE_MANAGEMENT` | `engineManagementSystem` |
 
-Der Engine-Management-Service berücksichtigt die vorherigen Resultate und bildet das Ende der Choreographie.
+Worker prüfen nichtleere Werte ungleich `INVALID` (ohne Beachtung der Groß-/Kleinschreibung). Engine Management prüft zusätzlich genau ein erfolgreiches Ergebnis jedes der drei Vorgänger. Management akzeptiert Ergebnisse nur zu einem laufenden gültigen Versuch, mit vollständigem Schlüsselsatz und widerspruchsfreien Status-/Resultatwerten.
 
-## 4. REST-Verträge
+`READY` ohne Resultat genügt nicht. Gesamt-OK erfordert vier vollständige `READY/OK`-Ausführungen. Sobald ein Schritt fehlgeschlagen ist, gilt Gesamt-FAILED; ansonsten bleibt das Gesamtergebnis bis zum Abschluss `null`.
 
-### Extern
+## Versuchskonsistenz und Retry
 
-```http
-POST /api/configurations
-GET  /api/configurations/{configurationId}
-POST /api/analyses
-GET  /api/analyses/{analysisId}
-POST /api/analyses/{analysisId}/algorithms/{algorithm}/retry
-```
+Ein Start erzeugt eine neue `attemptId` für alle Schritte. Retry ist nur bei `FAILED` und vollständigen erfolgreichen Vorgängern erlaubt. Er setzt Ziel und sämtliche Nachfolger mit einer neuen Versuch-ID zurück, markiert das Ziel laufend und erhält erfolgreiche Vorgänger. Der neue Command enthält deren Ergebnisse.
 
-### Intern
+Änderungen erfolgen in einer Transaktion mit pessimistisch gesperrtem `AnalysisRun`. Parallele Retry-Anfragen können denselben Fehlerzustand deshalb nicht beide erfolgreich verbrauchen. HTTP-Aufrufe liegen außerhalb der Sperre. Alte Versuche und Rückmeldungen an terminale Ausführungen überschreiben keine gültigen Ergebnisse. Wiederholte `RUNNING`-Meldungen verlängern nicht künstlich die Fortschrittsfrist.
 
-Jeder Analyse-Service:
+Jeder Worker unterdrückt doppelte Commands anhand `(analysisId, attemptId)` in einem lokalen Register. Standard: höchstens 10.000 Einträge, abgeschlossene Einträge bis zu einer Stunde bzw. bis zur notwendigen Verdrängung. Laufende Einträge werden nicht verdrängt. Das Register ist flüchtig; keine clusterweite oder dauerhafte Genau-einmal-Ausführung wird zugesichert.
 
-```http
-POST /internal/analyses
-```
+## Fehlerbehandlung und Grenzen
 
-Callbacks an Analysis Management:
+| Schutz | Standard und Bedeutung |
+|---|---|
+| HTTP-Client | 2 Sekunden Verbindungs-, 5 Sekunden Lesefrist |
+| Callback-Retry | maximal drei Gesamtversuche bei Netzwerkfehlern bzw. HTTP 500/502/503/504; Backoff 200/400 ms |
+| Inaktivitätsprüfung | 30 Sekunden ohne Fortschritt, Scan jede Sekunde; erster offener Schritt wird `FAILED` |
+| Management-Breaker | `startFluid`, `startThermal`, `startElectrical`, `startEngineManagement` |
+| Weitergabe-Breaker | je ein prozesslokaler `nextService` in Fluid, Thermal und Electrical |
 
-```http
-PUT /internal/analyses/{analysisId}/algorithms/{algorithm}/status
-PUT /internal/analyses/{analysisId}/algorithms/{algorithm}/result
-```
+Die Demo-Breaker verwenden ein Fenster von zwei Aufrufen, mindestens einen Aufruf, 50 % Fehlerschwelle, zehn Sekunden OPEN und einen Probeaufruf in HALF_OPEN. Ein Thermal-Fehler öffnet dadurch nicht den Management-Breaker für Fluid. Ein direkter Management-Retry prüft aber auch nicht automatisch den Fluid→Thermal-Breaker; dafür ist ein späterer Aufruf über diese Kante erforderlich.
 
-## 5. Analysis Command
+Eindeutige Ablehnung (Verbindungsaufbau gescheitert, offener Breaker oder HTTP 4xx) führt zur technischen Fehlermeldung. Nach unklarer Annahme, etwa verlorener Antwort oder HTTP 5xx, werden keine widersprüchlichen Fehlschläge erzwungen: Rückmeldungen bleiben bis zur Inaktivitätsfrist möglich. Versuchserkennung verhindert das Überschreiben durch veraltete Arbeit, beendet aber keinen entfernten Prozess.
 
-```text
-AnalysisCommand
-├── analysisId
-├── configuration
-└── previousResults[]
-```
+Nach Ausschöpfen der Callback-Versuche stoppt der Worker seine Weitergabe. Queue/Outbox oder dauerhafte Zustellgarantie existieren nicht. Nach Management-Neustart kann der Watchdog persistierte inaktive Läufe erkennen; verlorene Workerarbeit wird nicht automatisch fortgesetzt.
 
-Der Command wird entlang der Choreographie weitergegeben. Jeder erfolgreiche Service ergänzt sein eigenes Resultat, sodass Engine Management die Resultate der vorherigen Algorithmen berücksichtigen kann.
+## Persistenz, Kompatibilität und Betrieb
 
-## 6. Retry
+Configuration und Management besitzen getrennte H2-Dateien in eigenen Volumes. Worker halten nur flüchtige Verarbeitung und Deduplikation. Management referenziert die Konfigurations-ID; `ConfigurationSnapshot` ist ein Transportobjekt, kein im Lauf persistierter vollständiger Snapshot. Die öffentliche Konfigurations-API bietet aktuell keine Änderung gespeicherter Datensätze an.
 
-Ein Retry ist nur für einen Algorithmus im Status `FAILED` erlaubt.
+Ältere Läufe ohne Versuch-ID und Equipmentdetails bleiben historische Datensätze. Unfertige Altbestände werden mit einem Hinweis beendet; für erneute Prüfung derselben Konfiguration wird ein neuer Lauf gestartet. Sie werden weder gelöscht noch nachträglich mit erfundenen Einzelergebnissen vervollständigt.
 
-Bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt. Wenn der wiederholte Algorithmus erfolgreich ist, wird die Choreographie ab diesem Punkt mit den noch ausstehenden nachfolgenden Analysen fortgesetzt.
-
-## 7. Circuit Breaker
-
-Service-zu-Service-Aufrufe werden mit Resilience4j abgesichert:
-
-```text
-Analysis Management --Circuit Breaker--> Fluid / Retry-Ziel
-Fluid              --Circuit Breaker--> Thermal
-Thermal            --Circuit Breaker--> Electrical
-Electrical         --Circuit Breaker--> Engine Management
-```
-
-Ist der nächste Service nicht erreichbar, markiert der Fallback den betroffenen Algorithmus als `FAILED`. Der aufrufende Service bleibt erreichbar und die Analyse kann später per Retry fortgesetzt werden.
-
-## 8. Overall Result
-
-- Sobald ein Algorithmus `FAILED` ist: `overallResult = FAILED`.
-- Solange kein Fehler vorliegt, aber ein Algorithmus `PENDING` oder `RUNNING` ist: `overallResult = null`.
-- Wenn alle vier Algorithmen `READY/OK` sind: `overallResult = OK`.
-
-## 9. Datenhoheit
-
-- `configuration-service`: persistiert `EngineConfiguration`
-- `analysis-management-service`: persistiert `AnalysisRun`, Status und Resultate
-- vier Analyse-Services: stateless
-
-Analyse-Services greifen nicht direkt auf fremde Datenbanken zu.
-
-## 10. Implementierungsstruktur
-
-```text
-api/             REST-Endpunkte und DTOs
-application/     fachlicher Ablauf / AnalysisWorker
-domain/          lokales Domänenmodell
-infrastructure/  REST-Clients, Persistenz, Circuit Breaker
-```
-
-## 11. Docker-Deployment
-
-Jeder Microservice besitzt ein eigenes `Dockerfile`. Das Repository enthält eine gemeinsame `docker-compose.yml`.
-
-```text
-Docker Host
-├── configuration-service:8081
-├── analysis-management-service:8082
-├── fluid-analysis-service:8083
-├── thermal-analysis-service:8084
-├── electrical-analysis-service:8085
-└── engine-management-analysis-service:8086
-```
-
-Die Services kommunizieren im Compose-Netzwerk über ihre Service-Namen, z. B. `http://thermal-analysis-service:8084`. `Configuration DB` und `Analysis DB` liegen in getrennten Docker Volumes.
-
-Start des Gesamtsystems:
-
-```bash
-docker compose up --build
-```
-
-Damit wird die technische Anforderung Docker/Docker Compose direkt im Prototyp umgesetzt und Independent Deployability demonstrierbar.
-
-## 12. Postman-Demonstration
-
-Die Collection `postman/WirSchiffenDas.postman_collection.json` deckt die wichtigsten Use Cases ab: Konfiguration anlegen/lesen, Analyse starten/abfragen und Retry eines fehlgeschlagenen Algorithmus.
-
-Für die Fehlerdemo wird beispielsweise `thermal-analysis-service` gestoppt. Der Circuit Breaker macht den Fehler im Analysezustand sichtbar; nach Neustart wird nur `THERMAL` wiederholt und die Choreographie ab dort fortgeführt.
-
-## 13. Zentrale Entwurfsentscheidungen
-
-- fachliche Service-Grenzen statt technischer Layer (`Wrong Cut` vermeiden)
-- REST/HTTP für Version 1
-- Choreographie statt zentraler Ablauf-Orchestration
-- asynchrone Algorithmusausführung für Responsiveness
-- stateless Analyse-Services
-- Circuit Breaker mit Resilience4j
-- Docker/Docker Compose als Deployment-Ziel
+`docker-compose.yml` baut lokal; `compose.images.yml` verwendet Registry-Images. Readiness-Checks betreffen die Prozessbereitschaft, nicht die fachliche Fehlerfreiheit aller Nachbarn. Ports, Volumes und Abhängigkeiten zeigt [deployment.puml](diagrams/deployment.puml). Start-/Störungsanleitung und aktuelle Testnachweise stehen in [README](../README.md) und [testing.md](testing.md).

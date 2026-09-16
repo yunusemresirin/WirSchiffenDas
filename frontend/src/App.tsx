@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   AppBar,
@@ -41,12 +41,14 @@ import {
   retryAlgorithm,
   startAnalysis,
 } from './api';
+import { serviceBreakers } from './health';
 import type {
   AlgorithmExecution,
   AlgorithmName,
   AnalysisResponse,
   AnalysisStatus,
   CircuitBreakerState,
+  CircuitBreakerName,
   CreateConfigurationRequest,
   EngineConfiguration,
   ServiceHealth,
@@ -60,6 +62,31 @@ const emptyConfiguration: CreateConfigurationRequest = {
   electricalSystem: 'PREMIUM',
   engineManagementSystem: 'ADVANCED',
 };
+
+const equipmentLabels: Record<keyof CreateConfigurationRequest, string> = {
+  oilSystem: 'Ölsystem',
+  fuelSystem: 'Kraftstoffsystem',
+  coolingSystem: 'Kühlsystem',
+  electricalSystem: 'Elektrisches System',
+  engineManagementSystem: 'Motorsteuerung',
+};
+
+const managementBreakers: Array<{ name: CircuitBreakerName; target: ServiceKey; label: string }> = [
+  { name: 'startFluid', target: 'fluid', label: 'Start / Retry Fluid' },
+  { name: 'startThermal', target: 'thermal', label: 'Retry Thermal' },
+  { name: 'startElectrical', target: 'electrical', label: 'Retry Electrical' },
+  { name: 'startEngineManagement', target: 'engine-management', label: 'Retry Engine Management' },
+];
+
+function breakerLabel(key: ServiceKey, name: CircuitBreakerName): string {
+  if (key === 'analysis-management') {
+    return managementBreakers.find((item) => item.name === name)?.label ?? name;
+  }
+  const next: Partial<Record<ServiceKey, string>> = {
+    fluid: 'Thermal', thermal: 'Electrical', electrical: 'Engine Management',
+  };
+  return `Weitergabe → ${next[key] ?? name}`;
+}
 
 const algorithmLabels: Record<AlgorithmName, string> = {
   FLUID: 'Fluid Analysis',
@@ -81,15 +108,17 @@ const breakerEdges: Array<{
   source: ServiceKey;
   target: ServiceKey;
   label: string;
+  breakerName: CircuitBreakerName;
 }> = [
   {
     source: 'analysis-management',
     target: 'fluid',
-    label: 'Start / Retry',
+    label: 'Start / Retry Fluid',
+    breakerName: 'startFluid',
   },
-  { source: 'fluid', target: 'thermal', label: 'Next' },
-  { source: 'thermal', target: 'electrical', label: 'Next' },
-  { source: 'electrical', target: 'engine-management', label: 'Next' },
+  { source: 'fluid', target: 'thermal', label: 'Weitergabe', breakerName: 'nextService' },
+  { source: 'thermal', target: 'electrical', label: 'Weitergabe', breakerName: 'nextService' },
+  { source: 'electrical', target: 'engine-management', label: 'Weitergabe', breakerName: 'nextService' },
 ];
 
 function statusColor(status: AnalysisStatus): ChipProps['color'] {
@@ -125,24 +154,35 @@ function ConfigurationSection({
   busy,
   onChange,
   onSaved,
+  onBusyChange,
 }: {
   value: CreateConfigurationRequest;
   selected: EngineConfiguration | null;
   busy: boolean;
   onChange: (value: CreateConfigurationRequest) => void;
   onSaved: (configuration: EngineConfiguration) => void;
+  onBusyChange: (busy: boolean) => void;
 }) {
   const [loadId, setLoadId] = useState(
     () => localStorage.getItem('wirschiffendas.configurationId') ?? '',
   );
   const [localBusy, setLocalBusy] = useState(false);
+  const [configurationError, setConfigurationError] = useState<string | null>(null);
+
+  const setPending = (pending: boolean) => {
+    setLocalBusy(pending);
+    onBusyChange(pending);
+  };
 
   const setField = (field: keyof CreateConfigurationRequest, next: string) => {
+    setConfigurationError(null);
     onChange({ ...value, [field]: next });
   };
 
   const save = async () => {
-    setLocalBusy(true);
+    setPending(true);
+    setConfigurationError(null);
+    onChange(value);
     try {
       const configuration = await createConfiguration(value);
       localStorage.setItem(
@@ -151,30 +191,29 @@ function ConfigurationSection({
       );
       setLoadId(configuration.configurationId);
       onSaved(configuration);
+    } catch (error) {
+      setConfigurationError(`Speichern fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLocalBusy(false);
+      setPending(false);
     }
   };
 
   const load = async () => {
     if (!loadId.trim()) return;
-    setLocalBusy(true);
+    setPending(true);
+    setConfigurationError(null);
+    onChange(value);
     try {
       const configuration = await loadConfiguration(loadId.trim());
       localStorage.setItem(
         'wirschiffendas.configurationId',
         configuration.configurationId,
       );
-      onChange({
-        oilSystem: configuration.oilSystem,
-        fuelSystem: configuration.fuelSystem,
-        coolingSystem: configuration.coolingSystem,
-        electricalSystem: configuration.electricalSystem,
-        engineManagementSystem: configuration.engineManagementSystem,
-      });
       onSaved(configuration);
+    } catch (error) {
+      setConfigurationError(`Laden fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-      setLocalBusy(false);
+      setPending(false);
     }
   };
 
@@ -192,6 +231,27 @@ function ConfigurationSection({
             </Box>
           </Stack>
 
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <Button
+              variant="outlined"
+              disabled={busy || localBusy}
+              onClick={() => { setConfigurationError(null); onChange({ ...emptyConfiguration }); }}
+            >
+              Demo: gültige Konfiguration
+            </Button>
+            <Button
+              variant="outlined"
+              color="warning"
+              disabled={busy || localBusy}
+              onClick={() => { setConfigurationError(null); onChange({ ...emptyConfiguration, oilSystem: 'INVALID' }); }}
+            >
+              Demo: ungültiges Ölsystem
+            </Button>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Die Demos füllen das Formular. Bei der negativen Demo bleibt das Kraftstoffsystem gültig, damit beide Einzelresultate sichtbar werden.
+          </Typography>
+
           <Box
             sx={{
               display: 'grid',
@@ -203,33 +263,15 @@ function ConfigurationSection({
               gap: 2,
             }}
           >
-            <TextField
-              label="Oil System"
-              value={value.oilSystem}
-              onChange={(event) => setField('oilSystem', event.target.value)}
-            />
-            <TextField
-              label="Fuel System"
-              value={value.fuelSystem}
-              onChange={(event) => setField('fuelSystem', event.target.value)}
-            />
-            <TextField
-              label="Cooling System"
-              value={value.coolingSystem}
-              onChange={(event) => setField('coolingSystem', event.target.value)}
-            />
-            <TextField
-              label="Electrical System"
-              value={value.electricalSystem}
-              onChange={(event) => setField('electricalSystem', event.target.value)}
-            />
-            <TextField
-              label="Engine Management"
-              value={value.engineManagementSystem}
-              onChange={(event) =>
-                setField('engineManagementSystem', event.target.value)
-              }
-            />
+            {(Object.keys(equipmentLabels) as Array<keyof CreateConfigurationRequest>).map((field) => (
+              <TextField
+                key={field}
+                label={equipmentLabels[field]}
+                value={value[field]}
+                disabled={busy || localBusy}
+                onChange={(event) => setField(field, event.target.value)}
+              />
+            ))}
           </Box>
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
@@ -245,7 +287,12 @@ function ConfigurationSection({
               size="small"
               label="Configuration ID"
               value={loadId}
-              onChange={(event) => setLoadId(event.target.value)}
+              disabled={busy || localBusy}
+              onChange={(event) => {
+                setLoadId(event.target.value);
+                setConfigurationError(null);
+                onChange(value);
+              }}
               sx={{ minWidth: { md: 310 } }}
             />
             <Button
@@ -257,6 +304,14 @@ function ConfigurationSection({
               Laden
             </Button>
           </Stack>
+
+          {configurationError && <Alert severity="error">{configurationError}</Alert>}
+
+          {!selected && (
+            <Alert severity="info">
+              Vor dem Analysestart bitte die angezeigte Konfiguration speichern oder eine vorhandene ID laden. Änderungen im Formular heben die bisherige Auswahl auf.
+            </Alert>
+          )}
 
           {selected && (
             <Alert severity="success" icon={<CheckCircleRoundedIcon />}>
@@ -308,6 +363,20 @@ function AlgorithmCard({
               {execution.message}
             </Typography>
           )}
+          {Object.keys(execution.equipmentResults ?? {}).length > 0 && (
+            <Stack spacing={0.75}>
+              <Divider />
+              <Typography variant="caption" color="text.secondary">Ergebnisse je Equipment</Typography>
+              {Object.entries(execution.equipmentResults).map(([equipment, result]) => (
+                <Stack key={equipment} direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                  <Typography variant="body2">
+                    {equipmentLabels[equipment as keyof CreateConfigurationRequest] ?? equipment}
+                  </Typography>
+                  <Chip size="small" variant="outlined" label={result === 'OK' ? 'OK' : 'Fehler'} color={result === 'OK' ? 'success' : 'error'} />
+                </Stack>
+              ))}
+            </Stack>
+          )}
         </Stack>
       </CardContent>
       {execution.status === 'FAILED' && (
@@ -338,16 +407,17 @@ function RuntimeHealthCard({ health }: { health: ServiceHealth }) {
           color={health.reachable ? 'success' : 'error'}
           variant={health.reachable ? 'outlined' : 'filled'}
         />
-        {health.circuitBreaker && (
-          <Tooltip title={`Actuator status: ${health.actuatorStatus}`}>
+        {serviceBreakers[health.key].map((name) => (
+          <Tooltip key={name} title={`${name} · Actuator: ${health.actuatorStatus}`}>
             <Chip
               size="small"
               icon={<SettingsInputComponentRoundedIcon />}
-              label={`CB ${health.circuitBreaker.state}`}
-              color={breakerColor(health.circuitBreaker.state)}
+              label={`${breakerLabel(health.key, name)}: ${health.circuitBreakers[name]?.state ?? 'UNKNOWN'}`}
+              color={breakerColor(health.circuitBreakers[name]?.state ?? 'UNKNOWN')}
             />
           </Tooltip>
-        )}
+        ))}
+        {health.error && <Typography variant="caption" color="text.secondary">{health.error}</Typography>}
       </Stack>
     </Paper>
   );
@@ -357,13 +427,15 @@ function BreakerEdge({
   sourceHealth,
   target,
   label,
+  breakerName,
 }: {
   sourceHealth?: ServiceHealth;
   target: ServiceKey;
   label: string;
+  breakerName: CircuitBreakerName;
 }) {
-  const state = sourceHealth?.circuitBreaker?.state ?? 'UNKNOWN';
-  const snapshot = sourceHealth?.circuitBreaker;
+  const snapshot = sourceHealth?.circuitBreakers[breakerName];
+  const state = snapshot?.state ?? 'UNKNOWN';
 
   return (
     <Stack
@@ -380,7 +452,7 @@ function BreakerEdge({
         <Tooltip
           title={
             <span>
-              schützt den Aufruf zu {serviceLabels[target]}
+              {breakerName}: schützt den Aufruf zu {serviceLabels[target]}
               {snapshot?.failureRate !== undefined
                 ? ` · Failure rate: ${snapshot.failureRate}`
                 : ''}
@@ -408,8 +480,26 @@ export default function App() {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [health, setHealth] = useState<ServiceHealth[]>([]);
   const [busy, setBusy] = useState(false);
+  const [configurationBusy, setConfigurationBusy] = useState(false);
   const [retrying, setRetrying] = useState<AlgorithmName | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const analysisRequests = useRef({ generation: 0, mutationPending: false });
+
+  const changeConfiguration = (next: CreateConfigurationRequest) => {
+    setConfigurationDraft(next);
+    setConfiguration(null);
+  };
+
+  const acceptConfiguration = (saved: EngineConfiguration) => {
+    setConfigurationDraft({
+      oilSystem: saved.oilSystem,
+      fuelSystem: saved.fuelSystem,
+      coolingSystem: saved.coolingSystem,
+      electricalSystem: saved.electricalSystem,
+      engineManagementSystem: saved.engineManagementSystem,
+    });
+    setConfiguration(saved);
+  };
 
   const healthByKey = useMemo(
     () => new Map(health.map((item) => [item.key, item])),
@@ -421,10 +511,16 @@ export default function App() {
   }, []);
 
   const refreshAnalysis = useCallback(async () => {
-    if (!analysis?.analysisId) return;
+    if (!analysis?.analysisId || analysisRequests.current.mutationPending) return;
+    const requestedId = analysis.analysisId;
+    const generation = ++analysisRequests.current.generation;
     try {
-      setAnalysis(await loadAnalysis(analysis.analysisId));
+      const next = await loadAnalysis(requestedId);
+      // An older poll must not overwrite a newer response or a successful retry.
+      if (generation !== analysisRequests.current.generation) return;
+      setAnalysis((current) => current?.analysisId === requestedId ? next : current);
     } catch (nextError) {
+      if (generation !== analysisRequests.current.generation) return;
       setError(nextError instanceof Error ? nextError.message : String(nextError));
     }
   }, [analysis?.analysisId]);
@@ -447,7 +543,9 @@ export default function App() {
   }, [analysis, refreshAnalysis]);
 
   const runAnalysis = async () => {
-    if (!configuration) return;
+    if (!configuration || configurationBusy || analysisRequests.current.mutationPending) return;
+    analysisRequests.current.mutationPending = true;
+    ++analysisRequests.current.generation;
     setBusy(true);
     try {
       const next = await startAnalysis(configuration.configurationId);
@@ -456,19 +554,25 @@ export default function App() {
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : String(nextError));
     } finally {
+      analysisRequests.current.mutationPending = false;
       setBusy(false);
     }
   };
 
   const retry = async (algorithm: AlgorithmName) => {
-    if (!analysis) return;
+    if (!analysis || analysisRequests.current.mutationPending) return;
+    const requestedId = analysis.analysisId;
+    analysisRequests.current.mutationPending = true;
+    ++analysisRequests.current.generation;
     setRetrying(algorithm);
     try {
-      setAnalysis(await retryAlgorithm(analysis.analysisId, algorithm));
+      const next = await retryAlgorithm(requestedId, algorithm);
+      setAnalysis((current) => current?.analysisId === requestedId ? next : current);
       await refreshHealth();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : String(nextError));
     } finally {
+      analysisRequests.current.mutationPending = false;
       setRetrying(null);
     }
   };
@@ -517,8 +621,9 @@ export default function App() {
             value={configurationDraft}
             selected={configuration}
             busy={busy}
-            onChange={setConfigurationDraft}
-            onSaved={setConfiguration}
+            onChange={changeConfiguration}
+            onSaved={acceptConfiguration}
+            onBusyChange={setConfigurationBusy}
           />
 
           <Card variant="outlined">
@@ -534,7 +639,7 @@ export default function App() {
                     <Box>
                       <Typography variant="h6">2. Qualitätsanalyse</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Die UI startet nur den bestehenden Analysis-Management-Endpunkt; die weitere Verarbeitung bleibt choreographiert.
+                        Die Analyse prüft die gespeicherte Konfiguration. Status und Ergebnisse werden während des Laufs aktualisiert.
                       </Typography>
                     </Box>
                   </Stack>
@@ -549,7 +654,7 @@ export default function App() {
                 <Button
                   variant="contained"
                   size="large"
-                  disabled={!configuration || busy}
+                  disabled={!configuration || busy || configurationBusy || retrying !== null}
                   startIcon={busy ? <CircularProgress size={18} color="inherit" /> : <AnalyticsRoundedIcon />}
                   onClick={runAnalysis}
                   sx={{ alignSelf: 'flex-start' }}
@@ -605,7 +710,7 @@ export default function App() {
                   <Box>
                     <Typography variant="h6">3. Runtime-Status aller Services</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      REACHABLE bedeutet: der Container antwortet. Ein OPEN Circuit Breaker kann den Actuator-Gesamtstatus absichtlich auf DOWN setzen, obwohl der Service selbst weiterläuft.
+                      REACHABLE bedeutet: der Service liefert eine gültige Zustandsantwort. Ein offener Circuit Breaker kann den Gesamtstatus auf DOWN setzen, obwohl der Service weiterläuft. Proxyfehler zählen als UNREACHABLE.
                     </Typography>
                   </Box>
                   <Chip size="small" label="Polling: 2 s" variant="outlined" />
@@ -673,6 +778,7 @@ export default function App() {
                           sourceHealth={healthByKey.get(edge.source)}
                           target={edge.target}
                           label={edge.label}
+                          breakerName={edge.breakerName}
                         />
                         <Paper variant="outlined" sx={{ p: 2, width: 180 }}>
                           <Typography fontWeight={700}>{serviceLabels[edge.target]}</Typography>
@@ -685,8 +791,18 @@ export default function App() {
                   </Stack>
                 </Box>
 
+                <Typography variant="subtitle2">Direkte Start- und Retry-Aufrufe aus Analysis Management</Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' }, gap: 1.5 }}>
+                  {managementBreakers.map((edge) => (
+                    <Paper key={edge.name} variant="outlined" sx={{ p: 1.5 }}>
+                      <Typography variant="body2" textAlign="center">Management → {serviceLabels[edge.target]}</Typography>
+                      <BreakerEdge sourceHealth={healthByKey.get('analysis-management')} target={edge.target} label={edge.label} breakerName={edge.name} />
+                    </Paper>
+                  ))}
+                </Box>
+
                 <Alert severity="info" icon={<ErrorRoundedIcon />}>
-                  <strong>Demo:</strong> `docker compose stop thermal-analysis-service` → neue Analyse starten. Der Breaker <strong>Fluid → Thermal</strong> öffnet nach dem fehlgeschlagenen Aufruf. Nach der Wartezeit wird <strong>HALF_OPEN</strong> sichtbar. Service wieder starten und den fehlgeschlagenen Algorithmus über den Retry-Button erneut ausführen.
+                  <strong>Fehler und Erholung:</strong> Wird Thermal gestoppt, schlägt die Weitergabe von Fluid fehl. Der Breaker <strong>Fluid → Thermal</strong> öffnet, sobald seine Fehlerschwelle erreicht ist. Nach dem Neustart kann ein Thermal-Retry die Analyse über den separaten Management-Aufruf fortsetzen. Dieser Retry schließt den Breaker von Fluid jedoch nicht. Nach dessen Wartezeit einen <strong>neuen Gesamtlauf</strong> starten: Erst ein erfolgreicher Probeaufruf über Fluid → Thermal ermöglicht die Rückkehr zu CLOSED. HALF_OPEN ist eine Prüfphase, noch kein Nachweis der Erholung.
                 </Alert>
               </Stack>
             </CardContent>

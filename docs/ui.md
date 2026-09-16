@@ -1,123 +1,53 @@
-# Web UI – Engine Quality Dashboard
+# Weboberfläche
 
-## Zweck
+Die React-Oberfläche dient dem Ingenieur zur Konfiguration und Beobachtung. Nginx stellt die gebauten Dateien bereit und leitet API- und Monitoring-Aufrufe an die Backendservices weiter. Sie steuert keine Folgeschritte der Analyse.
 
-Die Web-UI ist eine zusätzliche Präsentationskomponente für den bestehenden Proof-of-Concept. Sie führt keine eigene fachliche Analyse oder Orchestration aus, sondern verwendet ausschließlich die bereits vorhandenen REST-Schnittstellen.
+## Konfiguration
 
-Technologien:
+Die fünf Felder betreffen Öl, Kraftstoff, Kühlung, Elektrik und Engine Management. Die Beispielauswahl stellt eine gültige Konfiguration und einen gezielten Ölfehler bereit. Beim Ölfehler bleibt Kraftstoff gültig, damit die getrennten Einzelergebnisse sichtbar werden.
 
-- React
-- Material UI
-- Vite
-- TypeScript
-- Nginx als Reverse Proxy im Container
+Speichern liefert eine Konfigurations-ID. Laden übernimmt einen gespeicherten Stand. Jede Formularänderung entfernt die zuvor ausgewählte ID; ein ungespeicherter neuer Stand kann deshalb nicht versehentlich unter einer alten ID analysiert werden. Während Speicher-/Ladeaktionen bleibt der Start gesperrt. Fehler werden angezeigt.
 
-## Funktionen
+## Analyseergebnisse
 
-1. Engine-Konfiguration erstellen und persistent speichern.
-2. Vorhandene Konfiguration über eine `configurationId` laden.
-3. Qualitätsanalyse starten.
-4. Status und Resultat der vier Analysealgorithmen anzeigen.
-5. `OverallResult` anzeigen.
-6. Retry-Button für einen Algorithmus im Zustand `FAILED` anbieten.
-7. Runtime-Erreichbarkeit aller sechs Backend-Services anzeigen.
-8. Circuit-Breaker-Zustände entlang der Choreographie visualisieren.
+Die Oberfläche zeigt je Algorithmus Status, Resultat, Fehlermeldung und vorhandene Equipmentdetails. Ein Lauf ist nur insgesamt erfolgreich, wenn alle vier Analysen vollständig erfolgreich sind. Nach einem fachlichen Fehler bleiben bereits berechnete Einzelresultate sichtbar.
 
-## Analyseansicht
+Ein technischer Fehler besitzt eine Erklärung, aber keine erfundenen fachlichen Teilresultate. Ältere gespeicherte Läufe können leere Details und eine fehlende Versuchkennung enthalten.
 
-Die UI zeigt für jeden Algorithmus:
+Fehlgeschlagene Schritte können über Retry erneut gestartet werden. Der Backendservice entscheidet, ob der Zustand einen Retry zulässt. Erfolgreiche Vorgänger bleiben erhalten; alte Rückmeldungen werden im Backend verworfen. Die Oberfläche verwirft auch veraltete Statusabfragen während eines Start-/Retry-Vorgangs.
 
-- `PENDING`
-- `RUNNING`
-- `READY`
-- `FAILED`
-- Resultat `OK` / `FAILED`
-- optionale Fehlermeldung
-- Retry-Button bei `FAILED`
+## Erreichbarkeit und Circuit Breaker
 
-Der Analysezustand wird während der Verarbeitung regelmäßig über
+Erreichbarkeit und Breaker-Zustand sind verschiedene Informationen:
 
-```http
-GET /api/analyses/{analysisId}
+- Ein gültiger Actuator-Response beweist, dass der angesprochene Service antwortet. Das gilt auch für HTTP 503 bei einem offenen Breaker.
+- Proxyfehler wie HTTP 502/504 und HTML-Fehlerseiten gelten nicht als erfolgreicher Servicekontakt.
+- Breaker werden anhand ihrer konkreten Instanznamen gelesen und der passenden Verbindung zugeordnet.
+
+| Quelle | Ziel | Breaker |
+|---|---|---|
+| Analysis Management | Fluid | startFluid |
+| Analysis Management | Thermal | startThermal |
+| Analysis Management | Electrical | startElectrical |
+| Analysis Management | Engine Management | startEngineManagement |
+| Fluid | Thermal | nextService |
+| Thermal | Electrical | nextService |
+| Electrical | Engine Management | nextService |
+
+Configuration und Engine Management besitzen keinen solchen ausgehenden Start-Breaker. Die Worker-Rückmeldungen verwenden begrenzte HTTP-Wiederholungen.
+
+## Demo eines Ausfalls
+
+Thermal stoppen und eine gültige Analyse starten. Fluid kann sein Ergebnis melden; die Weitergabe scheitert und öffnet seinen Breaker. Nach Wiederherstellung erlaubt ein Retry über Management die Fortsetzung ab Thermal.
+
+Dieser Retry verwendet Management->Thermal. Der ursprüngliche Breaker Fluid->Thermal braucht einen eigenen erfolgreichen Probeaufruf: nach der Wartezeit eine neue Gesamtanalyse starten. Die Oberfläche erläutert diesen Unterschied.
+
+## Entwicklung
+
+```powershell
+cd frontend
+npm ci
+npm run dev
 ```
 
-aktualisiert.
-
-## Circuit-Breaker-Visualisierung
-
-Visualisierte Kanten:
-
-```text
-Analysis Management --CB--> Fluid
-Fluid              --CB--> Thermal
-Thermal            --CB--> Electrical
-Electrical         --CB--> Engine Management
-```
-
-Farben:
-
-- `CLOSED`: grün
-- `OPEN`: rot
-- `HALF_OPEN`: orange
-- unbekannt/nicht verfügbar: grau
-
-Für die PoC-Demo werden Resilience4j Circuit Breaker zusätzlich als Spring-Boot-Actuator-Health-Indicator registriert. Die UI unterscheidet bewusst zwischen
-
-- **Service REACHABLE / UNREACHABLE** und
-- **Circuit-Breaker-/Actuator-Zustand**.
-
-Das ist notwendig, weil Resilience4j einen `OPEN` Circuit Breaker im Actuator-Health-Modell als `DOWN` abbilden kann, obwohl der aufrufende Microservice selbst weiterhin erreichbar ist.
-
-## Prototypische Parameter
-
-Damit der Zustandswechsel in einer kurzen Prüfung sichtbar wird, gilt für die Breaker im PoC:
-
-- erster fehlgeschlagener geschützter Aufruf kann `OPEN` auslösen,
-- Wartezeit im Zustand `OPEN`: 10 Sekunden,
-- automatischer Wechsel zu `HALF_OPEN`,
-- ein Testaufruf ist in `HALF_OPEN` erlaubt.
-
-Diese Parameter sind bewusst demonstrationsfreundlich und nicht als produktive Standardkonfiguration zu verstehen.
-
-## Fehlerdemo
-
-Beispiel:
-
-```bash
-docker compose -f alternative_docker-compose.yml stop thermal-analysis-service
-```
-
-Dann in der UI eine neue Analyse starten. Erwartung:
-
-```text
-FLUID   READY / OK
-THERMAL FAILED / FAILED
-OverallResult = FAILED
-Fluid -> Thermal Circuit Breaker = OPEN
-```
-
-Nach ca. 10 Sekunden wird der Breaker `HALF_OPEN` angezeigt.
-
-Danach:
-
-```bash
-docker compose -f alternative_docker-compose.yml start thermal-analysis-service
-```
-
-Über den Retry-Button wird `THERMAL` erneut gestartet. Die bereits erfolgreichen Vorgänger werden nicht wiederholt; die Choreographie wird ab dem Retry-Ziel fortgeführt.
-
-## Reverse Proxy
-
-Im Browser werden keine Backend-Ports direkt angesprochen. Vite übernimmt diese Aufgabe in der Entwicklungsumgebung; im Docker-Deployment übernimmt Nginx das Routing.
-
-```text
-Browser
-  |
-  v
-Web UI / Nginx
-  |-- /api/configurations* --> configuration-service:8081
-  |-- /api/analyses* -------> analysis-management-service:8082
-  `-- /monitor/... ----------> Actuator des jeweiligen Backend-Service
-```
-
-Dadurch bleibt die Browser-Konfiguration unabhängig von den internen Docker-Service-Adressen und es ist keine zusätzliche CORS-Konfiguration in allen Backends erforderlich.
+Vite verwendet standardmäßig Port 5173 und leitet API-/Monitoring-Aufrufe an die lokalen Backendports weiter. Der normale Containerstart stellt die Oberfläche auf Port 3000 bereit.

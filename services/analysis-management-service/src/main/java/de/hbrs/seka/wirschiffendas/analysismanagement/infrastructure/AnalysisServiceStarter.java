@@ -1,48 +1,37 @@
 package de.hbrs.seka.wirschiffendas.analysismanagement.infrastructure;
 
 import de.hbrs.seka.wirschiffendas.analysismanagement.domain.AlgorithmName;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import java.util.Map;
 
 @Component
 public class AnalysisServiceStarter {
+    private final Map<AlgorithmName, RestClient> clients;
+    private final CircuitBreakerRegistry breakers;
+    private static final Map<AlgorithmName, String> BREAKER_NAMES = Map.of(
+            AlgorithmName.FLUID, "startFluid", AlgorithmName.THERMAL, "startThermal",
+            AlgorithmName.ELECTRICAL, "startElectrical", AlgorithmName.ENGINE_MANAGEMENT, "startEngineManagement");
 
-    private final RestClient.Builder builder;
-    private final String fluidUrl;
-    private final String thermalUrl;
-    private final String electricalUrl;
-    private final String engineManagementUrl;
-
-    public AnalysisServiceStarter(
-            RestClient.Builder builder,
+    public AnalysisServiceStarter(RestClient.Builder builder, CircuitBreakerRegistry breakers,
             @Value("${services.fluid.url}") String fluidUrl,
             @Value("${services.thermal.url}") String thermalUrl,
             @Value("${services.electrical.url}") String electricalUrl,
             @Value("${services.engine-management.url}") String engineManagementUrl) {
-        this.builder = builder;
-        this.fluidUrl = fluidUrl;
-        this.thermalUrl = thermalUrl;
-        this.electricalUrl = electricalUrl;
-        this.engineManagementUrl = engineManagementUrl;
+        this.breakers = breakers;
+        // Each target has an immutable client and its own breaker state.
+        clients = Map.of(
+                AlgorithmName.FLUID, builder.clone().baseUrl(fluidUrl).build(),
+                AlgorithmName.THERMAL, builder.clone().baseUrl(thermalUrl).build(),
+                AlgorithmName.ELECTRICAL, builder.clone().baseUrl(electricalUrl).build(),
+                AlgorithmName.ENGINE_MANAGEMENT, builder.clone().baseUrl(engineManagementUrl).build());
     }
 
-    @CircuitBreaker(name = "analysisServiceStarter")
     public void start(AlgorithmName algorithm, AnalysisCommand command) {
-        String baseUrl = switch (algorithm) {
-            case FLUID -> fluidUrl;
-            case THERMAL -> thermalUrl;
-            case ELECTRICAL -> electricalUrl;
-            case ENGINE_MANAGEMENT -> engineManagementUrl;
-        };
-
-        builder.baseUrl(baseUrl)
-                .build()
-                .post()
-                .uri("/internal/analyses")
-                .body(command)
-                .retrieve()
-                .toBodilessEntity();
+        breakers.circuitBreaker(BREAKER_NAMES.get(algorithm)).executeRunnable(() ->
+                clients.get(algorithm).post().uri("/internal/analyses").body(command)
+                        .retrieve().toBodilessEntity());
     }
 }

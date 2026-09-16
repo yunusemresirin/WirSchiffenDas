@@ -1,0 +1,143 @@
+# Standalone variant for already published backend images.
+# Set IMAGE_REPOSITORY and VERSION to a repository/tag you have published.
+services:
+  configuration-service:
+    image: ${IMAGE_REPOSITORY:?Set IMAGE_REPOSITORY to your published backend repository}:configuration-service-v${VERSION:?Set VERSION to a published version}
+    ports:
+      - "8081:8081"
+    volumes:
+      - configuration-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8081/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  analysis-management-service:
+    image: ${IMAGE_REPOSITORY:?Set IMAGE_REPOSITORY to your published backend repository}:analysis-management-service-v${VERSION:?Set VERSION to a published version}
+    ports:
+      - "8082:8082"
+    environment:
+      CONFIGURATION_SERVICE_URL: http://configuration-service:8081
+      FLUID_ANALYSIS_SERVICE_URL: http://fluid-analysis-service:8083
+      THERMAL_ANALYSIS_SERVICE_URL: http://thermal-analysis-service:8084
+      ELECTRICAL_ANALYSIS_SERVICE_URL: http://electrical-analysis-service:8085
+      ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL: http://engine-management-analysis-service:8086
+    volumes:
+      - analysis-data:/app/data
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8082/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  engine-management-analysis-service:
+    image: ${IMAGE_REPOSITORY:?Set IMAGE_REPOSITORY to your published backend repository}:engine-management-analysis-service-v${VERSION:?Set VERSION to a published version}
+    ports:
+      - "8086:8086"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+    depends_on:
+      analysis-management-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8086/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  electrical-analysis-service:
+    image: ${IMAGE_REPOSITORY:?Set IMAGE_REPOSITORY to your published backend repository}:electrical-analysis-service-v${VERSION:?Set VERSION to a published version}
+    ports:
+      - "8085:8085"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+      ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL: http://engine-management-analysis-service:8086
+    depends_on:
+      analysis-management-service:
+        condition: service_healthy
+      engine-management-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8085/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  thermal-analysis-service:
+    image: ${IMAGE_REPOSITORY:?Set IMAGE_REPOSITORY to your published backend repository}:thermal-analysis-service-v${VERSION:?Set VERSION to a published version}
+    ports:
+      - "8084:8084"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+      ELECTRICAL_ANALYSIS_SERVICE_URL: http://electrical-analysis-service:8085
+    depends_on:
+      analysis-management-service:
+        condition: service_healthy
+      electrical-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8084/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  fluid-analysis-service:
+    image: ${IMAGE_REPOSITORY:?Set IMAGE_REPOSITORY to your published backend repository}:fluid-analysis-service-v${VERSION:?Set VERSION to a published version}
+    ports:
+      - "8083:8083"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+      THERMAL_ANALYSIS_SERVICE_URL: http://thermal-analysis-service:8084
+    depends_on:
+      analysis-management-service:
+        condition: service_healthy
+      thermal-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8083/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  web-ui:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      configuration-service:
+        condition: service_healthy
+      analysis-management-service:
+        condition: service_healthy
+      engine-management-analysis-service:
+        condition: service_healthy
+      electrical-analysis-service:
+        condition: service_healthy
+      thermal-analysis-service:
+        condition: service_healthy
+      fluid-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  configuration-data:
+  analysis-data:
+
+networks:
+  default: {}

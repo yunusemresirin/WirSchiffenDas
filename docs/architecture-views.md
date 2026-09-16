@@ -1,38 +1,16 @@
-# WirSchiffenDas – 4-Sichten-Modell
+# WirSchiffenDas – vier UML-Sichten
 
-Die Architektur wird ergänzend zu `ddd.md` und `architecture.md` in vier kompakten Sichten dokumentiert. Die Diagramme liegen als PlantUML-Dateien unter `docs/diagrams/` und können direkt gerendert werden.
+Stand: 16. September 2026. Die PlantUML-Quellen beschreiben den implementierten Prototyp und lassen sich einzeln rendern. Die ergänzende Unternehmensvision ist ausdrücklich getrennt.
 
-## 1. Kontextsicht
+| Sicht | Diagramm | Aussage und Abgrenzung |
+|---|---|---|
+| Kontext | [context.puml](diagrams/context.puml) | System als Blackbox, Ingenieur/Demo-Operator und angebotene Funktionen; keine ERP-/CRM-Integration behauptet |
+| Bausteine | [building-blocks.puml](diagrams/building-blocks.puml) | React/Nginx, sechs Backendservices, zwei Datenhaltungen und HTTP-Abhängigkeiten |
+| Laufzeit | [runtime.puml](diagrams/runtime.puml) | erfolgreiche sequenzielle Choreographie mit Command, Versuch und proaktiven Rückmeldungen |
+| Verteilung | [deployment.puml](diagrams/deployment.puml) | Browser, einzelner Docker-Host, sieben Container, Ports und getrennte Volumes |
 
-Datei: `docs/diagrams/context.puml`
+Die Laufzeitsicht wird durch [runtime-recovery.puml](diagrams/runtime-recovery.puml) um eindeutig abgelehnten Start, unklare Annahme/Timeout und Retry ergänzt. Die beiden Laufzeitdiagramme sind Varianten derselben Sicht, keine zusätzlichen Pflichtsichten.
 
-Zweck: Zeigt die Systemgrenze und den wichtigsten Akteur. Der Ingenieur nutzt das System zum Anlegen von Konfigurationen, zum Starten einer Analyse, zum Beobachten des Status und zum Retry.
+DDD-Beziehungen stehen in [context-map.puml](diagrams/context-map.puml). U/D bezeichnet dort die fachliche Abhängigkeit von veröffentlichten Daten/Verträgen, nicht den gesamten HTTP-Aufrufpfad. Die weiter gefasste [context-map-vision.puml](diagrams/context-map-vision.puml) aus Übung 4 ist ausschließlich konzeptionell.
 
-## 2. Bausteinsicht
-
-Datei: `docs/diagrams/building-blocks.puml`
-
-Zweck: Zeigt die sechs fachlichen Microservices und ihre wesentlichen Beziehungen. Die vier Analyse-Services bilden die choreographierte Analyse-Kette. Configuration und Analysis Management besitzen getrennte Datenhoheit.
-
-## 3. Laufzeitsicht
-
-Datei: `docs/diagrams/runtime.puml`
-
-Zweck: Zeigt den dynamischen Ablauf einer Analyse. Enthalten sind der Happy Path sowie der relevante Fehlerfall, bei dem Thermal nicht erreichbar ist und später per Retry fortgesetzt wird.
-
-## 4. Verteilungssicht
-
-Datei: `docs/diagrams/deployment.puml`
-
-Zweck: Zeigt das Deployment auf einem Docker Host. Jeder Microservice läuft in einem eigenen Container. Configuration und Analysis Management besitzen getrennte persistente Volumes.
-
-## Zusammenhang mit arc42
-
-Die vier Sichten können später nahezu unverändert in die arc42-Dokumentation übernommen werden:
-
-- Kontextsicht → Kontextabgrenzung
-- Bausteinsicht → Bausteinsicht
-- Laufzeitsicht → Laufzeitsicht
-- Verteilungssicht → Verteilungssicht
-
-Die Dokumentation bleibt bewusst knapp: Die Diagramme zeigen nur Architekturinformationen, die für den Proof-of-Concept und die zentralen Qualitätsziele relevant sind.
+Zuordnung zur [arc42](arc42.md): Kontext → Abschnitt 3, Bausteine → 5, Laufzeit → 6, Verteilung → 7. Schnittstellen-/Fehlerdetails: [architecture.md](architecture.md); Modelle und Grenzen: [ddd.md](ddd.md).

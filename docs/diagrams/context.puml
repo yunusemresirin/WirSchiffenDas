@@ -1,20 +1,31 @@
 @startuml
-left to right direction
-skinparam componentStyle rectangle
-
-title Kontextsicht – WirSchiffenDas Engine Quality Analysis
-
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam packageStyle rectangle
+top to bottom direction
 actor "Ingenieur" as Engineer
-rectangle "WirSchiffenDas\nEngine Quality Analysis" as System
-
-Engineer --> System : Engine-Konfiguration anlegen/lesen
-Engineer --> System : Qualitätsanalyse starten
-Engineer --> System : Status und Resultate abrufen
-Engineer --> System : fehlgeschlagenen Algorithmus erneut starten
-
-note right of System
-  Systemgrenze des Proof-of-Concepts.
-  Bedienung erfolgt über REST/Postman.
+actor "Demo-Operator" as Operator
+rectangle "WirSchiffenDas\nAnalyseprototyp" {
+  usecase "Konfiguration\nspeichern / laden" as Configuration
+  usecase "Analyse starten" as Start
+  usecase "Fortschritt und\nEquipmentresultate lesen" as Read
+  usecase "Fehlgeschlagenen\nSchritt wiederholen" as Retry
+  usecase "Betriebszustand\nbeobachten" as Monitor
+}
+Engineer --> Configuration
+Engineer --> Start
+Engineer --> Read
+Engineer --> Retry
+Operator --> Monitor
+note bottom of Read
+  Bedienung: Browser mit Web UI
+  Alternativ: REST-Client / Postman
 end note
-
+note bottom of Monitor
+  Operator stoppt/startet Container
+  über Docker außerhalb der Fach-API.
+end note
 @enduml

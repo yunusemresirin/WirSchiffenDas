@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 CONFIG_URL="${CONFIG_URL:-http://localhost:8081}"
 ANALYSIS_URL="${ANALYSIS_URL:-http://localhost:8082}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-40}"
@@ -17,7 +19,7 @@ wait_for_health() {
   local name="$2"
   echo "Warte auf $name ..."
   for _ in $(seq 1 40); do
-    if curl -fsS "$url/actuator/health" | jq -e '.status == "UP"' >/dev/null 2>&1; then
+    if curl -fsS "$url/actuator/health/readiness" | jq -e '.status == "UP"' >/dev/null 2>&1; then
       echo "$name ist UP"
       return 0
     fi

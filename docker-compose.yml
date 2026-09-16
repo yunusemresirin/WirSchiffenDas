@@ -1,13 +1,26 @@
+# Local source build for development and the presentation.
 services:
   configuration-service:
-    image: ysirin2s/seka-wirschiffendas:configuration-service-v${VERSION}
+    build:
+      context: .
+      dockerfile: services/configuration-service/Dockerfile
+    image: wirschiffendas/configuration-service:${VERSION:-dev}
     ports:
       - "8081:8081"
     volumes:
       - configuration-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8081/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
 
   analysis-management-service:
-    image: ysirin2s/seka-wirschiffendas:analysis-management-service-v${VERSION}
+    build:
+      context: .
+      dockerfile: services/analysis-management-service/Dockerfile
+    image: wirschiffendas/analysis-management-service:${VERSION:-dev}
     ports:
       - "8082:8082"
     environment:
@@ -19,68 +32,130 @@ services:
     volumes:
       - analysis-data:/app/data
     depends_on:
-      - configuration-service
+      configuration-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8082/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
 
   engine-management-analysis-service:
-    image: ysirin2s/seka-wirschiffendas:engine-management-analysis-service-v${VERSION}
+    build:
+      context: .
+      dockerfile: services/engine-management-analysis-service/Dockerfile
+    image: wirschiffendas/engine-management-analysis-service:${VERSION:-dev}
     ports:
       - "8086:8086"
     environment:
       ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
     depends_on:
-      - analysis-management-service
+      analysis-management-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8086/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
 
   electrical-analysis-service:
-    image: ysirin2s/seka-wirschiffendas:electrical-analysis-service-v${VERSION}
+    build:
+      context: .
+      dockerfile: services/electrical-analysis-service/Dockerfile
+    image: wirschiffendas/electrical-analysis-service:${VERSION:-dev}
     ports:
       - "8085:8085"
     environment:
       ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
       ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL: http://engine-management-analysis-service:8086
     depends_on:
-      - analysis-management-service
-      - engine-management-analysis-service
+      analysis-management-service:
+        condition: service_healthy
+      engine-management-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8085/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
 
   thermal-analysis-service:
-    image: ysirin2s/seka-wirschiffendas:thermal-analysis-service-v${VERSION}
+    build:
+      context: .
+      dockerfile: services/thermal-analysis-service/Dockerfile
+    image: wirschiffendas/thermal-analysis-service:${VERSION:-dev}
     ports:
       - "8084:8084"
     environment:
       ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
       ELECTRICAL_ANALYSIS_SERVICE_URL: http://electrical-analysis-service:8085
     depends_on:
-      - analysis-management-service
-      - electrical-analysis-service
+      analysis-management-service:
+        condition: service_healthy
+      electrical-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8084/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
 
   fluid-analysis-service:
-    image: ysirin2s/seka-wirschiffendas:fluid-analysis-service-v${VERSION}
+    build:
+      context: .
+      dockerfile: services/fluid-analysis-service/Dockerfile
+    image: wirschiffendas/fluid-analysis-service:${VERSION:-dev}
     ports:
       - "8083:8083"
     environment:
       ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
       THERMAL_ANALYSIS_SERVICE_URL: http://thermal-analysis-service:8084
     depends_on:
-      - analysis-management-service
-      - thermal-analysis-service
+      analysis-management-service:
+        condition: service_healthy
+      thermal-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://localhost:8083/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
 
   web-ui:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    image: wirschiffendas/web-ui:${VERSION:-dev}
     ports:
       - "3000:80"
     depends_on:
-      - configuration-service
-      - analysis-management-service
-      - fluid-analysis-service
-      - thermal-analysis-service
-      - electrical-analysis-service
-      - engine-management-analysis-service
+      configuration-service:
+        condition: service_healthy
+      analysis-management-service:
+        condition: service_healthy
+      engine-management-analysis-service:
+        condition: service_healthy
+      electrical-analysis-service:
+        condition: service_healthy
+      thermal-analysis-service:
+        condition: service_healthy
+      fluid-analysis-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
 volumes:
   configuration-data:
   analysis-data:
 
 networks:
-  default:
-    name: wirschiffendas-network
+  default: {}

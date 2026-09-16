@@ -1,260 +1,145 @@
-# WirSchiffenDas – Engine Quality Analysis
+# WirSchiffenDas - Engine Quality Analysis
 
-Proof-of-Concept einer Microservice-basierten Qualitätsanalyse für Diesel-Engine-Konfigurationen im Modul SEKA.
+Ein SEKA-Prototyp zur Qualitätsanalyse einer Motorkonfiguration. Vier Analyse-Microservices arbeiten in einer REST-Choreographie zusammen. Die Weboberfläche zeigt Equipmentresultate, Status, Wiederholungen und die Erreichbarkeit der Services.
 
-## Services
+## Lokal starten
 
-- `configuration-service` – Port 8081
-- `analysis-management-service` – Port 8082
-- `fluid-analysis-service` – Port 8083
-- `thermal-analysis-service` – Port 8084
-- `electrical-analysis-service` – Port 8085
-- `engine-management-analysis-service` – Port 8086
-- `web-ui` – React + Material UI + Vite, erreichbar über Port 3000
+Voraussetzung: Docker Desktop mit Linux-Containern und Docker Compose v2.
 
-Die Analyse läuft choreographiert:
+Im Projektordner:
+
+```powershell
+docker compose up --build -d --wait
+```
+
+Die Oberfläche ist unter [localhost:3000](http://localhost:3000) erreichbar. Alle sechs Backends und die Oberfläche werden aus dem lokalen Quellcode gebaut. Eine `.env` ist nicht nötig; der lokale Image-Tag ist standardmäßig `dev`.
+
+```powershell
+docker compose ps
+docker compose logs -f analysis-management-service
+docker compose stop
+docker compose start --wait
+```
+
+Ein normaler Stopp oder `docker compose down` erhält die Konfigurationen und Analyseläufe in zwei getrennten Docker-Volumes. `down -v` löscht diese Daten und gehört nicht zum normalen Demoablauf.
+
+`alternative_docker-compose.yml` bleibt als kompatibler Verweis auf die Standarddatei erhalten. Für bereits veröffentlichte Backend-Images gibt es die getrennte Variante `compose.images.yml`; dafür sind `IMAGE_REPOSITORY` und `VERSION` explizit zu setzen. Die Weboberfläche wird auch dort lokal gebaut.
+
+## Services und Ablauf
+
+| Service | Host-Port | Verantwortung |
+|---|---:|---|
+| configuration-service | 8081 | Konfigurationen und eigene H2-Datenbank |
+| analysis-management-service | 8082 | Analyseläufe, Ergebnisse, Versuche, Timeout und eigene H2-Datenbank |
+| fluid-analysis-service | 8083 | Öl- und Kraftstoffsystem getrennt prüfen |
+| thermal-analysis-service | 8084 | Kühlsystem prüfen |
+| electrical-analysis-service | 8085 | Elektrisches System prüfen |
+| engine-management-analysis-service | 8086 | Engine Management und erforderliche Vorgängerresultate prüfen |
+| web-ui | 3000 | React-Oberfläche und Nginx-Reverse-Proxy |
 
 ```text
 Analysis Management -> Fluid -> Thermal -> Electrical -> Engine Management
+                         |         |           |               |
+                         +---------+-----------+---------------+
+                                    Status / Resultate
+                                   an Analysis Management
 ```
 
-Status und Ergebnisse werden von den Analyse-Services proaktiv an `analysis-management-service` zurückgemeldet. Service-zu-Service-Aufrufe sind mit Resilience4j Circuit Breakern abgesichert.
+Management startet den Anker Fluid oder bei einem Retry den betroffenen Schritt. Danach geben die Worker selbst weiter. Der Start antwortet mit HTTP 202; die simulierte Berechnung läuft asynchron. Die einzelnen HTTP-Aufrufe bleiben synchrone Kommunikationsabhängigkeiten.
 
-## Web UI
+## Ergebnisse und Fehlerbehandlung
 
-Das Frontend liegt unter `frontend/` und dient als kompakte Bedien- und Demonstrationsoberfläche für den PoC.
+- Jedes modellierte Equipmentteil bekommt ein eigenes `OK` oder `FAILED`. Fluid prüft Öl und Kraftstoff separat.
+- Gesamt-`OK` setzt vier vollständige `READY/OK`-Analysen voraus. Engine Management verlangt drei eindeutige erfolgreiche Vorgänger.
+- Fachlich ungültiges Equipment wird mit Einzelergebnissen erläutert. Technische Fehler haben eine Fehlermeldung und keine erfundenen Equipmentresultate.
+- Jeder Ausführungsversuch hat eine `attemptId`. Retry erhält erfolgreiche Vorgänger und erneuert den betroffenen Schritt samt Nachfolgern. Alte Rückmeldungen ändern den neuen Stand nicht.
+- Datenbanktransaktionen mit einer Sperre auf den Lauf verhindern konkurrierende Retry-Starts und verlorene Statusänderungen. HTTP-Aufrufe erfolgen außerhalb dieser Sperre.
+- Management schützt jedes Start-/Retry-Ziel durch einen eigenen Circuit Breaker. Jeder weitergebende Worker besitzt seinen eigenen `nextService`-Breaker.
+- Ohne Fortschritt wird ein noch offener Lauf nach der konfigurierten Frist an der ersten offenen Stufe als fehlgeschlagen markiert und kann wiederholt werden.
+- Worker wiederholen Rückmeldungen begrenzt bei vorübergehenden Übertragungsfehlern. Lokale Duplikaterkennung verhindert doppelte Verarbeitung desselben Versuchs innerhalb ihres Aufbewahrungsfensters.
 
-Funktionen:
+Die Readiness-Prüfung des Containers ist unabhängig vom globalen Circuit-Breaker-Healthstatus: Ein offener Breaker bedeutet nicht, dass sein aufrufender Service selbst unerreichbar ist.
 
-- Engine-Konfiguration anlegen und persistent speichern
-- vorhandene Konfiguration über `configurationId` laden
-- Qualitätsanalyse starten
-- `OverallResult` anzeigen
-- Status und Resultat aller vier Analysealgorithmen live anzeigen
-- Retry-Button für jeden fehlgeschlagenen Algorithmus
-- Runtime-Erreichbarkeit aller sechs Backend-Services anzeigen
-- Circuit-Breaker-Zustände `CLOSED`, `OPEN` und `HALF_OPEN` visualisieren
+## Vorbereitete Demo
 
-Die UI führt keine eigene Ablaufsteuerung durch. Sie verwendet ausschließlich die bestehenden REST-Endpunkte; die eigentliche Analyse bleibt choreographiert.
+1. In der Oberfläche die gültige Beispielkonfiguration auswählen, speichern und analysieren.
+2. Die Öl-Fehlerkonfiguration auswählen: Öl muss `FAILED`, Kraftstoff weiterhin `OK` liefern.
+3. Thermal stoppen und eine gültige Analyse starten:
 
-### Frontend lokal starten
+```powershell
+docker compose stop thermal-analysis-service
+```
 
-Backend-Services auf Ports 8081–8086 starten und anschließend:
+4. Fehlermeldung und den Breaker **Fluid -> Thermal** ansehen.
+5. Thermal starten und den fehlgeschlagenen Schritt in der Oberfläche wiederholen:
 
-```bash
+```powershell
+docker compose start thermal-analysis-service
+```
+
+Ein Retry von Management nach Thermal nutzt eine andere Verbindung als Fluid nach Thermal. Um auch den ursprünglichen Breaker zu schließen, nach dessen Wartezeit eine neue Gesamtanalyse starten. Dieser Aufruf prüft die ursprüngliche Verbindung.
+
+## Tests
+
+Automatisierte Backend-Tests benötigen **Java 21** und Maven:
+
+```powershell
+mvn verify
+```
+
+Frontend, Node.js 22.18+ oder 24:
+
+```powershell
 cd frontend
-npm install
-npm run dev
+npm ci
+npm test
+npm run build
 ```
 
-Vite läuft standardmäßig unter `http://localhost:5173` und proxyt die API-/Actuator-Anfragen an die Backend-Services.
-
-## Lokal mit Maven prüfen
-
-```bash
-mvn clean verify
-```
-
-Damit werden unter anderem die Unit-/Service-Tests für `AnalysisRun` und den `configuration-service` ausgeführt.
-
-## Docker-Versionierung
-
-Alle sechs Backend-Images werden gemeinsam unter dem Docker-Hub-Repository `ysirin2s/seka-wirschiffendas` veröffentlicht. Der Service-Name und die Release-Version stehen im Tag, zum Beispiel:
-
-```text
-ysirin2s/seka-wirschiffendas:configuration-service-v0.1.0
-ysirin2s/seka-wirschiffendas:fluid-analysis-service-v0.1.0
-```
-
-Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Unter PowerShell kann die Datei alternativ manuell als `.env` kopiert werden. `.env` ist nicht versioniert.
-
-## Docker-Variante 1 – versionierte Images aus Docker Hub
-
-Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Backend-Images aus `ysirin2s/seka-wirschiffendas` und baut die Web-UI lokal.
-
-Beispiel `.env`:
-
-```env
-VERSION=0.1.0
-```
-
-Danach:
-
-```bash
-docker compose pull
-docker compose up --build -d
-```
-
-Das Dashboard ist anschließend erreichbar unter:
-
-```text
-http://localhost:3000
-```
-
-Status anzeigen:
-
-```bash
-docker compose ps
-```
-
-Logs verfolgen:
-
-```bash
-docker compose logs -f
-```
-
-Stoppen:
-
-```bash
-docker compose down
-```
-
-Persistierte H2-Daten ebenfalls löschen:
-
-```bash
-docker compose down -v
-```
-
-## Docker-Variante 2 – alle Images lokal aus dem Source Code bauen
-
-Für Entwicklung und Prüfung des neuesten Source-Codes:
-
-```bash
-docker compose -f alternative_docker-compose.yml up --build -d
-```
-
-Diese Variante baut alle sechs Backend-Services und die Web-UI direkt aus dem Repository. Das Dashboard ist ebenfalls unter `http://localhost:3000` erreichbar.
-
-## Versioniertes Release nach Docker Hub
-
-Das PowerShell-Skript `scripts/release.ps1` baut und pusht alle sechs Backend-Images in einem Schritt. Manuelles `docker tag` und einzelne `docker push`-Befehle sind nicht nötig.
-
-Vorher einmal bei Docker Hub anmelden:
+Systemtests gegen die gestarteten Container, aus dem Projektordner:
 
 ```powershell
-docker login
+.\scripts\e2e.ps1
+.\scripts\e2e.ps1 -IncludeFaults -IncludeWorkerLoss
 ```
 
-Release erstellen:
+Der zweite Lauf stoppt bzw. beendet gezielt den Thermal-Container und startet ihn anschließend wieder. Er prüft Breaker-Isolation, Retry, alte Rückmeldungen, die Wiederherstellung der ursprünglichen Verbindung und einen verlorenen Worker nach Annahme des Auftrags. Details stehen in [docs/testing.md](docs/testing.md).
+
+## Einstellungen
+
+| Eigenschaft | Standard | Zweck |
+|---|---|---|
+| `http.client.connect-timeout` | 2 s | Verbindungsaufbau begrenzen |
+| `http.client.read-timeout` | 5 s | Warten auf HTTP-Antwort begrenzen |
+| `analysis.timeout.inactivity` | 30 s | Fehlenden Fortschritt erkennen |
+| `analysis.timeout.scan-interval-ms` | 1000 | Intervall der Timeout-Prüfung |
+| `worker.processing-delay` | 2 s | Sichtbare simulierte Berechnungsdauer |
+| Breaker-Wartezeit | 10 s | Wartezeit vor einem Probeaufruf |
+
+Spring-Konfiguration lässt sich bei Bedarf über entsprechende Umgebungsvariablen überschreiben. Für die Demo sind die Standardwerte vorgesehen.
+
+## Gespeicherte Läufe älterer Projektstände
+
+Ältere fertige Läufe bleiben lesbar. Sie enthalten noch keine Versuchkennung und keine Equipmentdetails; diese werden nicht nachträglich erfunden. Alte offene Läufe erhalten einen Hinweis, für ihre gespeicherte Konfiguration einen neuen Lauf anzulegen. Die Daten bleiben erhalten.
+
+## Architektur und Vortragsunterlagen
+
+- [arc42](docs/arc42.md): Kontext, Strategie, vier Sichten, Entscheidungen und Grenzen
+- [DDD](docs/ddd.md): fachlicher Schnitt und Context Map
+- [Anforderungen](docs/requirements.md): Aufgabenbezug und Nachweise
+- [Architekturverträge](docs/architecture.md): Commands, Callbacks und Zustandsregeln
+- [Tests und Demo](docs/testing.md)
+- [Oberfläche](docs/ui.md)
+- [Diagrammquellen](docs/diagrams)
+
+Die Algorithmen sind Simulationen. Lokale H2-Dateien, begrenzte Worker-Deduplizierung und Rückmeldeversuche ersetzen keine dauerhaft zuverlässige Nachrichteninfrastruktur. Horizontale Skalierung, Authentifizierung und verteiltes Tracing werden nicht als umgesetzt behauptet.
+
+## Eigene Backend-Images veröffentlichen
+
+Nach dem eigenen Docker-Login kann das Releaseskript explizit ausgeführt werden:
 
 ```powershell
-.\scripts\release.ps1 0.2.0
+.\scripts\release.ps1 -Version 0.1.0 -ImageRepository deinname/dein-repository
 ```
 
-Dadurch werden unter anderem folgende Tags erzeugt und gepusht:
-
-```text
-configuration-service-v0.2.0
-analysis-management-service-v0.2.0
-fluid-analysis-service-v0.2.0
-thermal-analysis-service-v0.2.0
-electrical-analysis-service-v0.2.0
-engine-management-analysis-service-v0.2.0
-```
-
-### Retention: nur aktuelle und vorherige Version behalten
-
-Für die automatische Bereinigung alter Docker-Hub-Tags benötigt das Skript zusätzlich ein Docker-Hub Personal Access Token (PAT). Das Token wird nur als Umgebungsvariable verwendet und niemals in Git gespeichert.
-
-Für die aktuelle PowerShell-Sitzung:
-
-```powershell
-$env:DOCKERHUB_PAT = "<dein Docker-Hub-PAT>"
-```
-
-Danach reicht weiterhin ein einzelner Befehl:
-
-```powershell
-.\scripts\release.ps1 0.3.0
-```
-
-Das Skript liest die vorhandenen versionierten Service-Tags aus Docker Hub, behält die zwei neuesten gemeinsamen Releases und versucht ältere Service-Tags zu entfernen. Falls die Docker-Hub-Tag-Löschung über die API in der aktuellen Hub-Version nicht akzeptiert wird, wird das Release nicht verworfen; das Skript gibt stattdessen eine Warnung aus und der betreffende alte Tag kann im Docker-Hub-Repository unter **Tags** gelöscht werden.
-
-Ohne `DOCKERHUB_PAT` funktionieren Build und Push weiterhin vollständig; lediglich die automatische Remote-Bereinigung wird übersprungen.
-
-## Circuit-Breaker- und Retry-Demo über die UI
-
-Für die prototypische Visualisierung ist der Breaker bewusst so konfiguriert, dass bereits ein fehlgeschlagener geschützter Aufruf den Zustand `OPEN` auslösen kann. Nach 10 Sekunden wechselt er automatisch nach `HALF_OPEN`.
-
-Beispiel Thermal-Ausfall:
-
-```bash
-docker compose -f alternative_docker-compose.yml stop thermal-analysis-service
-```
-
-Danach in der Web-UI:
-
-1. Konfiguration speichern oder laden.
-2. Neue Analyse starten.
-3. Fluid läuft erfolgreich durch.
-4. Der Aufruf Fluid → Thermal schlägt fehl.
-5. `THERMAL = FAILED`, `OverallResult = FAILED` und der Breaker Fluid → Thermal wird `OPEN` angezeigt.
-6. Nach ca. 10 Sekunden wird `HALF_OPEN` sichtbar.
-
-Thermal wieder starten:
-
-```bash
-docker compose -f alternative_docker-compose.yml start thermal-analysis-service
-```
-
-Danach in der UI beim fehlgeschlagenen Thermal-Algorithmus auf **Retry** klicken. Die Analyse wird ab Thermal fortgesetzt; bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt.
-
-Hinweis: Der Retry wird vom `analysis-management-service` direkt an das Retry-Ziel geschickt. Der Breaker Fluid → Thermal wird deshalb erst bei einem späteren normalen Aufruf über genau diese Kante wieder vollständig geschlossen. Das ist gewollt und macht den Unterschied zwischen Choreographie-Pfad und Management-Retry sichtbar.
-
-## Automatisierter End-to-End-Test
-
-Voraussetzungen: Docker Compose, `curl` und `jq`.
-
-Mit Docker-Hub-Images:
-
-```bash
-docker compose up -d
-bash scripts/e2e.sh
-```
-
-Oder mit lokal gebauten Images:
-
-```bash
-docker compose -f alternative_docker-compose.yml up --build -d
-COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
-```
-
-Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem Retry.
-
-Weitere Details: `docs/testing.md`.
-
-## Postman-Demo
-
-Collection importieren:
-
-`postman/WirSchiffenDas.postman_collection.json`
-
-Happy Path:
-
-1. `01 Create Configuration`
-2. `02 Get Configuration`
-3. `03 Start Analysis`
-4. einige Sekunden warten
-5. `04 Get Analysis Status / Result`
-
-Erwartetes Endergebnis: alle vier Algorithmen `READY / OK` und `overallResult = OK`.
-
-## Dokumentation
-
-- `docs/arc42.md` – kompakte Architekturdokumentation für das Semesterprojekt
-- `docs/requirements.md` – vollständige Anforderungen
-- `docs/requirements_short.md` – kompakte Requirements-Übersicht
-- `docs/ddd.md` – Domänenmodell und Bounded Contexts
-- `docs/architecture.md` – Architektur- und REST-Entscheidungen
-- `docs/testing.md` – Teststrategie und E2E-Szenarien
-- `docs/architecture-views.md` – Übersicht des 4-Sichten-Modells
-- `docs/diagrams/context.puml` – Kontextsicht
-- `docs/diagrams/building-blocks.puml` – Bausteinsicht
-- `docs/diagrams/runtime.puml` – Laufzeitsicht
-- `docs/diagrams/deployment.puml` – Verteilungssicht
+Es baut lokal und veröffentlicht die sechs Backend-Images unter dem angegebenen Ziel. Bestehende Remote-Tags werden nicht automatisch gelöscht.
