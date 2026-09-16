@@ -1,0 +1,263 @@
+\documentclass[9pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage[a4paper,margin=1.45cm,top=1.35cm,bottom=1.35cm]{geometry}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{pifont}
+\usepackage{lastpage}
+
+\definecolor{hbrsblue}{HTML}{00A6C8}
+\definecolor{darkblue}{HTML}{0A556B}
+\definecolor{lightblue}{HTML}{E8F7FA}
+\definecolor{lightgray}{HTML}{F3F5F6}
+\definecolor{okgreen}{HTML}{2E7D32}
+\definecolor{warnorange}{HTML}{B26A00}
+
+\hypersetup{colorlinks=true,linkcolor=darkblue,urlcolor=darkblue,citecolor=darkblue,pdftitle={WirSchiffenDas -- arc42 Architekturbeschreibung}}
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.12em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.35em,itemsep=0.12em,topsep=0.25em}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.07}
+\titleformat{\section}{\large\bfseries\color{darkblue}}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{darkblue}}{\thesubsection}{0.45em}{}
+\titlespacing*{\section}{0pt}{0.65em}{0.3em}
+\titlespacing*{\subsection}{0pt}{0.45em}{0.2em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small WirSchiffenDas -- Engine Quality Analysis}
+\fancyhead[R]{\small SEKA, SS 2026}
+\fancyfoot[L]{\small arc42 Architekturbeschreibung}
+\fancyfoot[R]{\small Seite \thepage\ von \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\newcommand{\hbrslogo}{%
+\begin{tikzpicture}[baseline=-0.4ex,scale=0.50]
+  \draw[line width=2.4pt,hbrsblue] (0,0) circle (0.34);
+  \fill[hbrsblue] (1.0,0) circle (0.34);
+  \node[anchor=west,text=black,font=\sffamily\bfseries] at (1.55,0.09) {Hochschule};
+  \node[anchor=west,text=black,font=\sffamily\bfseries] at (1.55,-0.25) {Bonn-Rhein-Sieg};
+\end{tikzpicture}}
+
+\newcommand{\tagbox}[2]{\colorbox{#1!12}{\textcolor{#1}{\textbf{#2}}}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+
+\begin{center}
+\hbrslogo\hfill\tagbox{hbrsblue}{Service-basierte Komponenten-Architekturen}
+
+\vspace{0.6em}
+{\LARGE\bfseries\color{darkblue} WirSchiffenDas}\par
+{\large Engine Quality Analysis -- arc42 Architekturbeschreibung}\par
+\vspace{0.35em}
+{\small Semesterprojekt Microservices, SS 2026 \;|\; Stand: 16.09.2026}
+\end{center}
+\vspace{-0.3em}
+\hrule
+
+\section{Einführung und Ziele}
+\textbf{Aufgabenstellung.} Ausgangspunkt ist die in der Fallstudie beschriebene Analyse-Komponente von \emph{Manufacturing Products}. Mehrere eigenständige Validierungs- und Simulationsalgorithmen waren eng gekoppelt und blockierten bei langen Laufzeiten die übrige Produktkonstruktion. Der Proof-of-Concept zerlegt diese Analyse fachlich in eigenständig deploybare Microservices. Eine Motorkonfiguration wird persistent verwaltet, eine Analyse asynchron gestartet, Status und Resultate werden pro Algorithmus sichtbar gemacht, ein fehlgeschlagener Schritt kann gezielt wiederholt werden und ein Ausfall eines Services soll nicht zu einer Fehlerkaskade führen.
+
+\textbf{Architekturziele.}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{3.2cm}X}
+\toprule
+Ziel & Konsequenz im PoC \\
+\midrule
+Fachliche Zerlegung & Schnitt nach Business Capabilities statt technischer Schichten; Strategic DDD mit Bounded Contexts.\\
+Lose Kopplung & Kommunikation ausschließlich über explizite REST-Verträge; kein gemeinsames Domain-Modul.\\
+Resilience & Resilience4j Circuit Breaker kapselt nicht erreichbare Analyse-Services und verhindert kaskadierende Fehler.\\
+Independent Deployability & Jeder Microservice besitzt ein eigenes Docker-Image und wird als eigener Container betrieben.\\
+Monitorability & Status \code{PENDING/RUNNING/READY/FAILED}, Einzelresultate und Gesamtergebnis sind je Analyse abrufbar.\\
+Responsiveness & \code{POST /api/analyses} startet die Verarbeitung und wartet nicht auf die komplette Analyse.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Wesentliche Anforderungen.} Eine Engine-Konfiguration muss erstellt, gespeichert und geladen werden können. Die Analyse verwendet mindestens vier eigenständige Algorithmen/Microservices. Jeder Service meldet Status und Resultat proaktiv zurück. Das UI bzw. der Demo-Client muss Einzelstatus, Retry und Overall Result unterstützen. Der Prototyp setzt mit Docker/Docker Compose die technische Anforderung MS\_TA2 um und demonstriert mit Resilience4j zusätzlich den für MS\_TA3 relevanten Circuit Breaker.
+
+\section{Randbedingungen und Lösungsstrategie}
+\begin{multicols}{2}
+\textbf{Technologie-Stack}
+\begin{itemize}
+  \item Java 21, Spring Boot
+  \item REST/HTTP, Spring Web
+  \item H2 + Spring Data JPA
+  \item Resilience4j
+  \item Docker + Docker Compose
+  \item React + Vite + MUI für die Bedienoberfläche
+  \item JUnit 5 / Mockito / Postman für Tests und Demo
+  \item PlantUML für die ausführlichen Architektursichten im Repository
+\end{itemize}
+
+\columnbreak
+\textbf{Bewusste Abgrenzung}
+\begin{itemize}
+  \item keine reale physikalische Motorsimulation
+  \item keine vollständige Migration der Unternehmensplattform
+  \item kein Kafka im Kernumfang
+  \item keine Camunda-/MCP-Orchestration des Order Fulfillment
+  \item kein Kubernetes- oder Cloud-Deployment
+  \item keine gemeinsame Datenbank und keine Shared Runtime Libraries zwischen Services
+\end{itemize}
+\end{multicols}
+
+Die Lösungsstrategie folgt dem Grundsatz \emph{business capability first}. Die Analyse wird nicht nach technischen Layern geschnitten, sondern entlang fachlicher Verantwortlichkeiten. Dadurch wird insbesondere das Anti-Pattern \emph{Wrong Cut} vermieden. Status- und Ergebnisverwaltung werden in einem eigenen Analysis-Management-Kontext konzentriert; die vier Analyse-Services bleiben zustandslos und damit einfacher horizontal skalierbar.
+
+\section{Kontext- und Domänensicht}
+\subsection{Fachlicher Kontext und Akteure}
+Der primäre Akteur ist der \textbf{Ingenieur} (im Prüfungsvortrag: Demo-Operator). Er erstellt oder lädt eine Motor-Konfiguration, startet die Qualitätsanalyse, beobachtet den Bearbeitungsstatus und wiederholt fehlgeschlagene Algorithmen. Die Systemgrenze umfasst ausschließlich den PoC der Engine Quality Analysis; SAP, Oracle CRM und Order Fullfillment liegen außerhalb.
+
+\begin{center}
+\begin{tikzpicture}[node distance=7mm and 9mm, every node/.style={font=\scriptsize}, box/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=25mm,minimum height=8mm,align=center}, actor/.style={draw,rounded corners,fill=lightgray,minimum width=20mm,minimum height=8mm}]
+\node[actor] (eng) {Ingenieur};
+\node[box,right=15mm of eng] (ui) {React/MUI\\Frontend};
+\node[box,right=of ui] (cfg) {Configuration\\Management};
+\node[box,below=of cfg] (am) {Analysis\\Management};
+\draw[-{Latex}] (eng) -- (ui);
+\draw[-{Latex}] (ui) -- (cfg);
+\draw[-{Latex}] (ui) -- (am);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Strategic DDD und Context Map}
+\begin{tabularx}{\linewidth}{p{3.1cm}p{4.2cm}X}
+\toprule
+Bounded Context & Microservice & Verantwortung \\
+\midrule
+Configuration Management & \code{configuration-service} & Konfiguration validieren, speichern und lesen.\\
+Analysis Management & \code{analysis-management-service} & AnalysisRun, Status, Resultate, Overall Result und Retry.\\
+Fluid Analysis & \code{fluid-analysis-service} & Oil-/Fuel-bezogene Validierung/Simulation.\\
+Thermal Analysis & \code{thermal-analysis-service} & thermisch geprägte Konfigurationsanteile simuliert analysieren.\\
+Electrical Analysis & \code{electrical-analysis-service} & elektrische Konfigurationsanteile simuliert analysieren.\\
+Engine Management Analysis & \code{engine-management-analysis-service} & finale EMS-Analyse unter Einbezug vorheriger Resultate.\\
+\bottomrule
+\end{tabularx}
+
+Configuration Management und Analysis Management besitzen ihre Daten selbst. Die Analyse-Services konsumieren nur die für ihren Kontext benötigten DTOs und bleiben stateless. Diese Trennung vermeidet \emph{Shared Persistence}. Zwischen den Kontexten wird kein universales Unternehmensdatenmodell erzwungen; an Grenzen findet Übersetzung in lokale Modelle statt (Anti-Corruption-Gedanke).
+
+\section{Baustein-, Laufzeit- und Verteilungssicht}
+\subsection{Bausteinsicht}
+\begin{center}
+\begin{tikzpicture}[node distance=5mm and 6mm,every node/.style={font=\scriptsize},svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=27mm,minimum height=8mm,align=center},data/.style={draw,ellipse,fill=lightgray,minimum width=19mm,minimum height=7mm}]
+\node[svc] (cfg) {configuration-service};
+\node[data,below=of cfg] (cfgdb) {Configuration DB};
+\node[svc,right=12mm of cfg] (am) {analysis-management-service};
+\node[data,below=of am] (amdb) {Analysis DB};
+\node[svc,right=12mm of am] (fluid) {fluid-analysis};
+\node[svc,below=of fluid] (thermal) {thermal-analysis};
+\node[svc,below=of thermal] (electrical) {electrical-analysis};
+\node[svc,below=of electrical] (ems) {engine-management-analysis};
+\draw[-{Latex}] (cfg) -- (cfgdb);
+\draw[-{Latex}] (am) -- (amdb);
+\draw[-{Latex}] (am) -- node[above]{Anchor} (fluid);
+\draw[-{Latex}] (fluid) -- (thermal);
+\draw[-{Latex}] (thermal) -- (electrical);
+\draw[-{Latex}] (electrical) -- (ems);
+\draw[-{Latex},dashed,bend left=25] (fluid.west) to (am.east);
+\draw[-{Latex},dashed,bend left=18] (thermal.west) to (am.east);
+\draw[-{Latex},dashed,bend left=10] (electrical.west) to (am.east);
+\draw[-{Latex},dashed,bend right=15] (ems.west) to (am.south east);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Externe REST-Schnittstellen:} \code{POST /api/configurations}, \code{GET /api/configurations/\{id\}}, \code{POST /api/analyses}, \code{GET /api/analyses/\{id\}} sowie \code{POST /api/analyses/\{id\}/algorithms/\{algorithm\}/retry}. Intern akzeptiert jeder Analyse-Service \code{POST /internal/analyses}; Status und Resultat werden per Callback an Analysis Management gemeldet.
+
+\subsection{Laufzeitsicht: Choreographie, Fehlerfall und Retry}
+Analysis Management erzeugt den \code{AnalysisRun} und startet ausschließlich den Anchor-Algorithmus \emph{Fluid}. Nach erfolgreichem Abschluss gibt jeder Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Damit entsteht eine sequenzielle Choreographie. Engine Management steht bewusst am Ende, da seine Analyse exemplarisch auf vorherigen Ergebnissen aufbaut. Jeder Schritt meldet \code{RUNNING} sowie abschließend \code{READY/OK} oder \code{FAILED} zurück.
+
+\begin{center}
+\begin{tikzpicture}[node distance=4mm and 8mm,every node/.style={font=\scriptsize},step/.style={draw,rounded corners,fill=lightblue,minimum width=23mm,minimum height=7mm,align=center},fail/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=23mm,minimum height=7mm,align=center}]
+\node[step] (am) {Analysis Mgmt};
+\node[step,right=of am] (f) {Fluid};
+\node[step,right=of f] (t) {Thermal};
+\node[step,right=of t] (e) {Electrical};
+\node[step,right=of e] (m) {Engine Mgmt};
+\draw[-{Latex}] (am) -- node[above]{start} (f);
+\draw[-{Latex}] (f) -- (t);
+\draw[-{Latex}] (t) -- (e);
+\draw[-{Latex}] (e) -- (m);
+\draw[-{Latex},dashed,bend right=28] (m.south) to node[below]{callbacks / overall result} (am.south);
+\end{tikzpicture}
+\end{center}
+
+Beim Ausfall von Thermal greift der Circuit Breaker am aufrufenden Service. Die Verarbeitung bricht kontrolliert ab, \code{THERMAL=FAILED} wird sichtbar und das Gesamtergebnis wird \code{FAILED}. Nach Wiederherstellung wird nur Thermal per Retry angestoßen; erfolgreiche Vorgänger werden nicht erneut ausgeführt, anschließend läuft die Choreographie ab Thermal weiter.
+
+\subsection{Verteilungssicht}
+Alle sechs Spring-Boot-Services laufen in separaten Docker-Containern im gemeinsamen Compose-Netzwerk. Die Service-Namen dienen als DNS-Namen; dadurch sind keine IP-Adressen im Source Code fest verdrahtet. Configuration und Analysis Management besitzen getrennte persistente Volumes; die vier Analyse-Services bleiben zustandslos.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Container & Port & Zustand \\
+\midrule
+configuration-service & 8081 & eigenes Volume \\
+analysis-management-service & 8082 & eigenes Volume \\
+fluid-analysis-service & 8083 & stateless \\
+thermal-analysis-service & 8084 & stateless \\
+electrical-analysis-service & 8085 & stateless \\
+engine-management-analysis-service & 8086 & stateless \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Querschnittliche Konzepte und Entwurfsentscheidungen}
+\subsection{Status-, Ergebnis- und Resilience-Konzept}
+Der Lebenszyklus eines Algorithmus lautet \code{PENDING -> RUNNING -> READY}; bei Fehlern ist der Übergang nach \code{FAILED} möglich. Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen, wird bei einem Fehler \code{FAILED} und erst bei vier erfolgreichen Schritten \code{OK}.
+
+Resilience4j implementiert den Circuit Breaker für ausgehende Service-Aufrufe. Das Zustandsmodell folgt dem üblichen Prinzip \emph{Closed -- Open -- Half-Open}: Im normalen Zustand werden Aufrufe zugelassen; bei ausreichender Fehlerrate öffnet der Breaker und blockiert weitere Aufrufe; nach einer Wartezeit werden begrenzte Testaufrufe zugelassen. Dadurch wird \emph{Isolation of Failures} praktisch demonstrierbar.
+
+\subsection{Architecture Decision Records (kompakt)}
+\begin{tabularx}{\linewidth}{p{1.4cm}p{3.2cm}X}
+\toprule
+ADR & Entscheidung & Begründung / Trade-off \\
+\midrule
+ADR-01 & Fachlicher Schnitt & Vermeidet Wrong Cut; Services entsprechen fachlichen Verantwortungen.\\
+ADR-02 & REST/HTTP & Für den PoC transparent und leicht testbar; dafür engeres Laufzeit-Coupling als bei Messaging.\\
+ADR-03 & Choreographie & Erfüllt die Aufgabenstellung und vermeidet einen zentralen Ablauf-Orchestrator.\\
+ADR-04 & Resilience4j & Circuit Breaker lokalisiert Fehler und macht den Ausfall eines Services demonstrierbar.\\
+ADR-05 & Container pro Service & Unterstützt Independent Deployability und erfüllt MS\_TA2.\\
+ADR-06 & Getrennte Datenhoheit & Vermeidet Shared Persistence und schützt die Bounded-Context-Grenzen.\\
+\bottomrule
+\end{tabularx}
+
+\section{Qualitätsanforderungen, Anti-Patterns und Risiken}
+Die Bewertung orientiert sich insbesondere am Katalog von Schirgi und Brenner. Für das Semesterprojekt werden vier Lösungen priorisiert, von denen mehrere tatsächlich umgesetzt sind.
+
+\begin{tabularx}{\linewidth}{c p{3.4cm} X}
+\toprule
+Prio & Smell / Anti-Pattern & Behandlung im PoC \\
+\midrule
+1 & Isolation of Failures & Circuit Breaker + kontrollierter Fehlerzustand + Retry.\\
+2 & Independent Deployability & eigener Docker-Container und eigener Build pro Service.\\
+3 & Wrong Cut & DDD-basierte Zerlegung nach Business Capabilities statt Presentation/Business/Data Layer.\\
+4 & Shared Persistence & getrennte Datenhoheit; nur DTO-basierte Integration.\\
+\bottomrule
+\end{tabularx}
+
+Weitere adressierte Punkte sind \emph{Hard-Coded Endpoints} (Compose-DNS statt IP-Adressen), \emph{No Health Check} (Health-Endpunkte können über Spring Boot Actuator bereitgestellt werden) und \emph{Insufficient Monitoring} (Statusmodell und Frontend-Sicht auf laufende Analysen). Für einen produktiven Betrieb bleiben zentralisiertes Logging, verteiltes Tracing, Authentisierung/Autorisierung, API-Versionierung und ein dediziertes Observability-Stack als offene Ausbaustufen.
+
+\textbf{Restrisiken und Lessons Learned.} Die REST-basierte Choreographie ist für den PoC verständlich, erzeugt jedoch temporale Kopplung zwischen aufeinanderfolgenden Services. In einer produktiven Variante wäre asynchrones Messaging (z.\,B. Kafka) für Statusereignisse und Choreographie zu prüfen. H2 ist für den lokalen Prototyp ausreichend, jedoch nicht für produktive Datenhaltung. Die größte Architekturwirkung entsteht nicht durch möglichst viele Services, sondern durch passende Bounded Contexts, klare Datenhoheit und kontrollierte Fehlergrenzen.
+
+\section{Prüfungsrelevante Zusammenfassung}
+Die Architektur demonstriert die in Übung 4--6 geforderten Kernelemente des Microservice-Semesterprojekts: Strategic DDD mit Bounded Contexts und Context Map, fachlich geschnittene Microservices, REST-Schnittstellen, eine choreographierte Analyse mit mindestens vier Algorithmen, persistente Konfigurations- und Analyseverwaltung, sichtbare Status/Resultate, gezielten Retry, Circuit Breaker sowie Docker/Docker Compose. Für den Vortrag sollten insbesondere die vier Architektursichten, die ADRs, der Circuit-Breaker-Fehlerfall und der Bezug zu den priorisierten Anti-Patterns erläutert werden; Source Code muss nicht auswendig gelernt, aber an den zentralen Stellen erklärt werden können.
+
+\vfill
+\small
+\textbf{Quellenbasis.} Übungsblätter Nr. 4, 5 und 6 sowie die finalen Semesterprojekt-Hinweise (Übungsblatt Nr. 8), die Fallstudie \emph{WirSchiffenDas}, Schirgi/Brenner (2021): \emph{Quality Assurance for Microservice Architectures}, Garriga (2018): \emph{Towards a Taxonomy of Microservices Architectures}. Die detaillierten Modelle und Traceability befinden sich zusätzlich in \code{docs/arc42.md}, \code{docs/ddd.md}, \code{docs/requirements.md} und \code{docs/diagrams/}.
+
+\end{document}
