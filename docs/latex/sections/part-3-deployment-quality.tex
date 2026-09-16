@@ -25,6 +25,8 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 
 \section{Querschnittliche Konzepte}
 \subsection{Status- und Ergebnismodell}
+
+\vfill
 \begin{center}
 \begin{tikzpicture}[
   node distance=12mm,
@@ -41,6 +43,7 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 \draw[-{Latex},thick] (r) -- (f);
 \end{tikzpicture}
 \end{center}
+\vfill
 
 Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen. Es wird \code{FAILED}, sobald ein relevanter Algorithmus fehlschlägt, und \code{OK}, sobald alle vier Algorithmen erfolgreich abgeschlossen sind.
 
@@ -78,7 +81,7 @@ Nur Configuration Management und Analysis Management besitzen langfristigen Zust
 \textbf{Begründung:} Die Kopplung zwischen Bounded Contexts wird reduziert; eine gemeinsame Datenbank wird nicht als Integrationsmechanismus verwendet.
 
 \section{Qualitätsanforderungen und Architecture Smells}
-\subsection{Priorisierte Probleme und Gegenmaßnahmen}
+\subsection{Priorisierte Probleme und Gegenma\ss{}nahmen}
 \begin{tabularx}{\textwidth}{L{1.2cm}L{5.0cm}Y}
 \toprule
 \textbf{Prio} & \textbf{Smell / Anti-Pattern} & \textbf{Behandlung im Proof-of-Concept} \\
@@ -99,5 +102,3 @@ Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose
   \item \textbf{Nachvollziehbarkeit:} Zu jeder Analyse-ID sind Status und Resultate aller vier Algorithmen abrufbar.
   \item \textbf{Deployment:} Ein einzelner Analyse-Service kann unabhängig neu gebaut oder neu gestartet werden.
 \end{itemize}
-
-\newpage

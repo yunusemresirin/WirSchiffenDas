@@ -3,7 +3,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[ngerman]{babel}
-\usepackage[a4paper,left=2.2cm,right=2.2cm,top=2.15cm,bottom=2.2cm,headheight=15pt]{geometry}
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.15cm,bottom=2.2cm,headheight=15pt]{geometry}
 \usepackage{lmodern}
 \usepackage{microtype}
 \usepackage{parskip}
@@ -20,6 +20,8 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{lastpage}
+\usepackage[ngerman]{datetime2}
+\DTMsetdatestyle{ddmmyyyy}
 
 \definecolor{hbrsblue}{HTML}{00A6C8}
 \definecolor{darkblue}{HTML}{0A556B}
@@ -66,8 +68,8 @@
 \begin{tikzpicture}[baseline=-0.4ex,scale=0.64]
   \draw[line width=2.5pt,hbrsblue] (0,0) circle (0.34);
   \fill[hbrsblue] (1.0,0) circle (0.34);
-  \node[anchor=west,text=black,font=\sffamily\bfseries\large] at (1.55,0.10) {Hochschule};
-  \node[anchor=west,text=black,font=\sffamily\bfseries\large] at (1.55,-0.28) {Bonn-Rhein-Sieg};
+  \node[anchor=west,text=black,font=\sffamily\bfseries\large] at (1.55,0.15) {Hochschule};
+  \node[anchor=west,text=black,font=\sffamily\bfseries\large] at (1.55,-0.5) {Bonn-Rhein-Sieg};
 \end{tikzpicture}}
 
 \newcommand{\tagbox}[2]{\colorbox{#1!12}{\textcolor{#1}{\textbf{#2}}}}
@@ -90,12 +92,16 @@
 \vspace{1.6cm}
 \tagbox{hbrsblue}{Service-basierte Komponenten-Architekturen (SEKA)}
 
+\vspace{0.25cm}
+{\large Theodoros Bampis \& Yunus Emre Sirin}\par
+{\large Sommersemester 2026}\par
+
 \vfill
 \begin{tabular}{rl}
 \textbf{Dokumenttyp:} & Architekturdokumentation nach arc42 \\
 \textbf{Architekturstil:} & Microservices \\
-\textbf{Semester:} & Sommersemester 2026 \\
-\textbf{Stand:} & 16.09.2026 \\
+\textbf{Schwerpunkt:} & Docker und Docker Compose \\
+\textbf{Stand:} & \DTMtoday \\
 \end{tabular}
 \vspace{1.0cm}
 \end{center}

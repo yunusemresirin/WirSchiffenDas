@@ -35,6 +35,18 @@ latexmk -pdf -interaction=nonstopmode -halt-on-error architecture.tex
 
 Alternativ kann `pdflatex` zweimal ausgeführt werden, damit Inhaltsverzeichnis und Seitenreferenzen vollständig aufgelöst werden.
 
+## Build über eine conda-Umgebung
+
+Wer keine TeX-Live-/MiKTeX-Installation möchte, kann den Build isoliert über eine conda-Umgebung fahren. Statt eines vollständigen TeX-Live-Pakets wird **Tectonic** verwendet – eine eigenständige LaTeX-Engine, die die benötigten Pakete (`babel`, `tikz`, `fancyhdr`, …) beim ersten Build automatisch aus ihrem Bundle nachlädt.
+
+```bash
+conda env create -f environment.yml   # legt die Umgebung "latex" an
+conda activate latex
+tectonic -X compile architecture.tex  # oder: ./build.ps1
+```
+
+Der erste Build benötigt Internetzugang (Paket-Download); danach läuft der Build offline. Das Skript [`build.ps1`](build.ps1) kapselt den Aufruf über `conda run -n latex` und funktioniert auch ohne aktivierte Umgebung.
+
 ## Automatischer PDF-Build
 
 Der GitHub-Actions-Workflow kompiliert `architecture.tex` bei jedem Push und Pull Request. Die erzeugte `architecture.pdf` wird als Workflow-Artifact bereitgestellt. Ein fehlerhafter LaTeX-Build lässt den Workflow fehlschlagen.

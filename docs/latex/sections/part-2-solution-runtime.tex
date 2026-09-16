@@ -18,9 +18,10 @@ Engine Management Analysis & \makecell[l]{engine-management-\\analysis-service} 
 \subsection{Datenhoheit und Integrationsprinzip}
 Configuration Management besitzt die Engine-Konfigurationen. Analysis Management besitzt die Analysezustände und Resultate. Die vier Analyse-Services bleiben stateless. Ein universales, gemeinsam genutztes Datenmodell wird bewusst vermieden. Integration erfolgt über DTOs und klar definierte Schnittstellen an den Context-Grenzen.
 
+\vfill
 \begin{center}
 \begin{tikzpicture}[
-  node distance=10mm and 22mm,
+  node distance=10mm and 25mm,
   every node/.style={font=\small},
   svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=52mm,minimum height=10mm,align=center},
   data/.style={draw,ellipse,fill=lightgray,minimum width=42mm,minimum height=9mm,align=center}
@@ -34,6 +35,7 @@ Configuration Management besitzt die Engine-Konfigurationen. Analysis Management
 \draw[-{Latex},dashed] (cfg) -- node[above]{DTO / REST} (am);
 \end{tikzpicture}
 \end{center}
+\vfill
 
 \newpage
 
@@ -41,6 +43,7 @@ Configuration Management besitzt die Engine-Konfigurationen. Analysis Management
 \subsection{Ebene 1: Systemübersicht}
 Die Architektur besteht aus einem Frontend und sechs Spring-Boot-Microservices. Configuration Management und Analysis Management verwalten Zustand. Die Analyse-Services sind zustandslos und bilden gemeinsam die eigentliche Qualitätsanalyse.
 
+\vfill
 \begin{center}
 \begin{tikzpicture}[
   node distance=9mm and 20mm,
@@ -68,6 +71,7 @@ Die Architektur besteht aus einem Frontend und sechs Spring-Boot-Microservices. 
 \draw[-{Latex},thick] (electrical) -- (ems);
 \end{tikzpicture}
 \end{center}
+\vfill
 
 \textit{Alle Analyse-Services melden Status und Resultate per Callback an Analysis Management zurück.}
 
@@ -93,23 +97,25 @@ Jeder Analyse-Service akzeptiert einen Analyseauftrag über \apiendpoint{POST /i
 \subsection{Happy Path}
 Analysis Management erzeugt den \code{AnalysisRun} und startet ausschließlich den Anchor-Algorithmus \emph{Fluid}. Danach gibt jeder erfolgreiche Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Dadurch entsteht eine sequenzielle Choreographie. Jeder Schritt meldet seinen Status zusätzlich an Analysis Management zurück.
 
+\vfill
 \begin{center}
 \begin{tikzpicture}[
-  node distance=4mm,
+  node distance=10mm,
   every node/.style={font=\small},
   stepbox/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=27mm,minimum height=11mm,align=center}
 ]
 \node[stepbox] (am) {Analysis\\Management};
 \node[stepbox,right=of am] (f) {Fluid};
 \node[stepbox,right=of f] (t) {Thermal};
-\node[stepbox,right=of t] (e) {Electrical};
-\node[stepbox,right=of e] (m) {Engine\\Management};
+\node[stepbox,below=of t] (e) {Electrical};
+\node[stepbox,left=of e] (m) {Engine\\Management};
 \draw[-{Latex},thick] (am) -- node[above]{start} (f);
 \draw[-{Latex},thick] (f) -- (t);
 \draw[-{Latex},thick] (t) -- (e);
 \draw[-{Latex},thick] (e) -- (m);
 \end{tikzpicture}
 \end{center}
+\vfill
 
 \begin{enumerate}
   \item Analysis Management legt einen neuen AnalysisRun mit initialen Zuständen an.
@@ -123,6 +129,7 @@ Analysis Management erzeugt den \code{AnalysisRun} und startet ausschließlich d
 \subsection{Fehlerfall, Circuit Breaker und Retry}
 Beim Ausfall von Thermal darf der Fehler nicht die gesamte Anwendung blockieren. Der ausgehende Aufruf wird durch Resilience4j geschützt. Der betroffene Schritt wird als fehlgeschlagen markiert und kann später gezielt wiederholt werden.
 
+\vfill
 \begin{center}
 \begin{tikzpicture}[
   node distance=11mm and 9mm,
@@ -139,6 +146,7 @@ Beim Ausfall von Thermal darf der Fehler nicht die gesamte Anwendung blockieren.
 \draw[-{Latex},thick,dashed] (am.south) |- (retry.east);
 \end{tikzpicture}
 \end{center}
+\vfill
 
 Bereits erfolgreiche Vorgänger werden beim Retry nicht erneut ausgeführt. Nach einem erfolgreichen Thermal-Retry wird die Choreographie über Electrical bis Engine Management fortgesetzt.
 
