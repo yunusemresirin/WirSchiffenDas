@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: arc42-pdf-${{ github.ref }}
   cancel-in-progress: true
@@ -17,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
@@ -35,3 +40,30 @@ jobs:
           path: docs/latex/architecture.pdf
           if-no-files-found: error
           retention-days: 30
+
+      - name: Prepare release asset
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+        run: cp docs/latex/architecture.pdf WirSchiffenDas-arc42.pdf
+
+      - name: Publish rolling development release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag -f arc42-latest "${GITHUB_SHA}"
+          git push origin refs/tags/arc42-latest --force
+
+          if gh release view arc42-latest >/dev/null 2>&1; then
+            gh release edit arc42-latest \
+              --title "WirSchiffenDas arc42 — development" \
+              --notes "Automatisch erzeugte arc42-Architekturdokumentation aus development. Commit: ${GITHUB_SHA}" \
+              --prerelease
+          else
+            gh release create arc42-latest \
+              --verify-tag \
+              --title "WirSchiffenDas arc42 — development" \
+              --notes "Automatisch erzeugte arc42-Architekturdokumentation aus development. Commit: ${GITHUB_SHA}" \
+              --prerelease
+          fi
+
+          gh release upload arc42-latest WirSchiffenDas-arc42.pdf --clobber
