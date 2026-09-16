@@ -2,20 +2,18 @@ name: Build arc42 PDF
 
 on:
   push:
-    branches:
-      - docs/arc42-latex
-    paths:
-      - 'docs/latex/**'
-      - '.github/workflows/arc42-latex.yml'
   pull_request:
-    paths:
-      - 'docs/latex/**'
-      - '.github/workflows/arc42-latex.yml'
   workflow_dispatch:
+
+concurrency:
+  group: arc42-pdf-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    name: Build arc42 PDF
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,8 +25,13 @@ jobs:
           working_directory: docs/latex
           latexmk_use_xelatex: false
 
-      - name: Upload PDF
+      - name: Verify PDF exists
+        run: test -s docs/latex/architecture.pdf
+
+      - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WirSchiffenDas-arc42
+          name: WirSchiffenDas-arc42-${{ github.sha }}
           path: docs/latex/architecture.pdf
+          if-no-files-found: error
+          retention-days: 30
