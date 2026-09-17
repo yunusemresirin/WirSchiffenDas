@@ -26,24 +26,32 @@ jobs:
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: architecture.tex
+          root_file: |
+            architecture.tex
+            presentation.tex
           working_directory: docs/latex
           latexmk_use_xelatex: false
 
-      - name: Verify PDF exists
-        run: test -s docs/latex/architecture.pdf
+      - name: Verify PDFs exist
+        run: |
+          test -s docs/latex/architecture.pdf
+          test -s docs/latex/presentation.pdf
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: WirSchiffenDas-arc42-${{ github.sha }}
-          path: docs/latex/architecture.pdf
+          path: |
+            docs/latex/architecture.pdf
+            docs/latex/presentation.pdf
           if-no-files-found: error
           retention-days: 30
 
       - name: Prepare release asset
         if: github.event_name == 'push' && github.ref == 'refs/heads/development'
-        run: cp docs/latex/architecture.pdf WirSchiffenDas-arc42.pdf
+        run: |
+          cp docs/latex/architecture.pdf WirSchiffenDas-arc42.pdf
+          cp docs/latex/presentation.pdf WirSchiffenDas-praesentation.pdf
 
       - name: Publish rolling development release
         if: github.event_name == 'push' && github.ref == 'refs/heads/development'
@@ -66,4 +74,4 @@ jobs:
               --prerelease
           fi
 
-          gh release upload arc42-latest WirSchiffenDas-arc42.pdf --clobber
+          gh release upload arc42-latest WirSchiffenDas-arc42.pdf WirSchiffenDas-praesentation.pdf --clobber

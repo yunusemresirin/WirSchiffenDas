@@ -1,0 +1,36 @@
+\frametitle{QR-08 -- Responsiveness durch \code {@Async}}
+\qrbadge{QR-08}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{lstlisting}[style=java]
+@PostMapping
+public ResponseEntity<Void> start(
+        @RequestBody AnalysisCommand command) {
+    worker.execute(command);
+    return ResponseEntity.accepted().build();
+}
+      \end{lstlisting}
+      \srcfile{.../api/AnalysisController.java}
+
+      \vspace{0.1cm}
+      \begin{lstlisting}[style=java]
+@Async
+public void execute(AnalysisCommand command) {
+    // laeuft im Hintergrund-Thread
+}
+      \end{lstlisting}
+      \srcfile{.../application/AnalysisWorker.java}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item Der Controller antwortet sofort mit \code{202 Accepted}.
+        \item \code{worker.execute} läuft dank \code{@Async} im Hintergrund.
+        \item Der Client blockiert nicht bis zum Ende der Analyse.
+        \item Status ist währenddessen weiter abfragbar (QR-02).
+      \end{itemize}
+      \begin{block}{Zusammenspiel}
+        \small \code{@EnableAsync} (TA-01) + \code{@Async} + \code{202 Accepted}.
+      \end{block}
+    \end{column}
+  \end{columns}
