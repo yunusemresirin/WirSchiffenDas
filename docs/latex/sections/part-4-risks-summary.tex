@@ -1,8 +1,10 @@
 \section{Risiken und technische Schulden}
 \begin{itemize}
-  \item Die REST-basierte Choreographie erzeugt temporale Kopplung zwischen aufeinanderfolgenden Services. Für eine produktive Variante ist asynchrones Messaging, z.\,B. Kafka, zu prüfen.
+  \item Die REST-basierte Choreographie erzeugt temporale Kopplung zwischen aufeinanderfolgenden Services. 
+  Für eine produktive Variante ist asynchrones Messaging, z.\,B. Kafka, zu prüfen.
   \item H2 ist für den lokalen Prototyp geeignet, nicht jedoch für eine produktive Datenhaltung mit Hochverfügbarkeit.
-  \item Monitoring ist im PoC fachlich sichtbar, aber noch kein vollständiger Observability-Stack mit zentralem Logging, Metriken und Tracing.
+  \item Monitoring ist im PoC fachlich sichtbar, aber noch kein vollständiger Observability-Stack mit zentralem Logging, 
+  Metriken und Tracing.
   \item Sicherheitsaspekte wie Authentisierung, Autorisierung und feinere API-Verträge sind für einen Produktivbetrieb weiter auszubauen.
 \end{itemize}
 
@@ -12,4 +14,8 @@
 % Für die mündliche Prüfung sollten insbesondere die vier Architektursichten, die Servicegrenzen, die Datenhoheit, der Happy Path, der Circuit-Breaker-Fehlerfall und die wichtigsten ADRs nachvollziehbar erklärt werden können.
 
 \section{Quellenbasis}
-Die Dokumentation basiert auf den Übungsblättern Nr. 4, 5 und 6, den finalen Semesterprojekt-Hinweisen, der Fallstudie \emph{WirSchiffenDas}, Schirgi/Brenner (2021): \emph{Quality Assurance for Microservice Architectures} sowie Garriga (2018): \emph{Towards a Taxonomy of Microservices Architectures}. Ergänzende Projektdokumentation befindet sich in \code{docs/arc42.md}, \code{docs/ddd.md}, \code{docs/requirements.md}, \code{docs/architecture.md}, \code{docs/testing.md} und \code{docs/diagrams/}.
+Die Dokumentation basiert auf den Übungsblättern Nr. 4, 5 und 6, den finalen Semesterprojekt-Hinweisen, der Fallstudie 
+\emph{WirSchiffenDas}, Schirgi/Brenner (2021): \emph{Quality Assurance for Microservice Architectures} sowie Garriga (2018): 
+\emph{Towards a Taxonomy of Microservices Architectures}. Ergänzende Projektdokumentation befindet sich in \code{docs/arc42.md}, 
+\code{docs/ddd.md}, \code{docs/requirements.md}, \code{docs/architecture.md}, \code{docs/testing.md} und \code{docs/diagrams/} in unserem Branch
+auf der \href{https://github.com/yunusemresirin/WirSchiffenDas/tree/main/docs}{GitHub-Repository}.

@@ -95,7 +95,7 @@ Jeder Analyse-Service akzeptiert einen Analyseauftrag über \apiendpoint{POST /i
 
 \section{Laufzeitsicht}
 \subsection{Happy Path}
-Analysis Management erzeugt den \code{AnalysisRun} und startet ausschließlich den Anchor-Algorithmus \emph{Fluid}. Danach gibt jeder erfolgreiche Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Dadurch entsteht eine sequenzielle Choreographie. Jeder Schritt meldet seinen Status zusätzlich an Analysis Management zurück.
+Analysis Management erzeugt den \code{AnalysisRun} und startet ausschlie\ss{}lich den Anchor-Algorithmus \emph{Fluid}. Danach gibt jeder erfolgreiche Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Dadurch entsteht eine sequenzielle Choreographie. Jeder Schritt meldet seinen Status zusätzlich an Analysis Management zurück.
 
 \vfill
 \begin{center}

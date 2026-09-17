@@ -2,7 +2,7 @@
 \subsection{Aufgabenstellung}
 Ausgangspunkt ist die in der Fallstudie beschriebene Analyse-Komponente von \emph{Manufacturing Products}. Mehrere fachlich eigenständige Validierungs- und Simulationsalgorithmen sind dort eng gekoppelt. Lange Laufzeiten einzelner Analysen blockieren dadurch den gesamten Konstruktionsablauf und verschlechtern die Responsiveness der Anwendung.
 
-Der Proof-of-Concept zerlegt diesen Bereich in eigenständig deploybare Microservices. Eine Motorkonfiguration wird persistent verwaltet und anschließend durch mehrere fachlich getrennte Analyse-Services geprüft. Status und Resultate jedes Algorithmus sollen sichtbar sein. Ein einzelner fehlgeschlagener Schritt muss gezielt wiederholt werden können, ohne bereits erfolgreiche Schritte erneut auszuführen.
+Der Proof-of-Concept zerlegt diesen Bereich in eigenständig deploybare Microservices. Eine Motorkonfiguration wird persistent verwaltet und anschlie\ss{}end durch mehrere fachlich getrennte Analyse-Services geprüft. Status und Resultate jedes Algorithmus sollen sichtbar sein. Ein einzelner fehlgeschlagener Schritt muss gezielt wiederholt werden können, ohne bereits erfolgreiche Schritte erneut auszuführen.
 
 \subsection{Architekturziele}
 \begin{tabularx}{\textwidth}{L{4.3cm}Y}
@@ -10,7 +10,7 @@ Der Proof-of-Concept zerlegt diesen Bereich in eigenständig deploybare Microser
 \textbf{Ziel} & \textbf{Konsequenz im Proof-of-Concept} \\
 \midrule
 Fachliche Zerlegung & Schnitt nach Business Capabilities statt nach technischen Schichten; Strategic DDD mit klaren Bounded Contexts. \\
-Lose Kopplung & Kommunikation ausschließlich über explizite REST-Verträge; kein gemeinsam verwendetes Domain-Modul. \\
+Lose Kopplung & Kommunikation ausschlie\ss{}lich über explizite REST-Verträge; kein gemeinsam verwendetes Domain-Modul. \\
 Ausfallsicherheit & Resilience4j Circuit Breaker kapselt nicht erreichbare Analyse-Services und begrenzt Fehlerkaskaden. \\
 Independent Deployability & Jeder Microservice besitzt einen eigenen Build und läuft in einem eigenen Docker-Container. \\
 Monitorability & Status, Einzelresultate und Gesamtergebnis sind über eine Analyse-ID nachvollziehbar. \\
@@ -56,7 +56,7 @@ Die vier Analyse-Services arbeiten daher mit vereinfachten, deterministischen Pr
 
 \section{Kontextabgrenzung}
 \subsection{Fachlicher Kontext}
-Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt diese Rolle der Demo-Operator. Er erstellt oder lädt eine Motorkonfiguration, startet die Qualitätsanalyse, beobachtet den Bearbeitungsstatus und stößt bei Bedarf einen Retry an.
+Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt diese Rolle der Demo-Operator. Er erstellt oder lädt eine Motorkonfiguration, startet die Qualitätsanalyse, beobachtet den Bearbeitungsstatus und stö\ss{}t bei Bedarf einen Retry an.
 
 \vfill
 \begin{center}
@@ -75,6 +75,6 @@ Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt 
 \end{center}
 \vfill
 
-Die Systemgrenze umfasst ausschließlich den PoC der Engine Quality Analysis. Externe Unternehmenssysteme und der vollständige Order-Fulfillment-Prozess liegen außerhalb dieser Dokumentation.
+Die Systemgrenze umfasst ausschlie\ss{}lich den PoC der Engine Quality Analysis. Externe Unternehmenssysteme und der vollständige Order-Fulfillment-Prozess liegen au\ss{}erhalb dieser Dokumentation.
 
 \newpage
