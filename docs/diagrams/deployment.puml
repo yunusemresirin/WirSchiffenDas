@@ -6,7 +6,7 @@ title Verteilungssicht – Docker Compose Deployment
 actor "Ingenieur\nWeb Browser" as Browser
 
 node "Entwicklungsrechner / Docker Host" as Host {
-    node "Docker Compose\nwirschaffendas-network" as Network {
+    node "Docker Compose\nwirschiffendas-network" as Network {
         node "web-ui\nNginx + React SPA\nHost :3000 -> Container :80" as WebUI
         node "configuration-service\nContainer :8081" as Configuration
         node "analysis-management-service\nContainer :8082" as Management

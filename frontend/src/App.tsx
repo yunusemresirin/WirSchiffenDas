@@ -133,7 +133,7 @@ function ConfigurationSection({
   onSaved: (configuration: EngineConfiguration) => void;
 }) {
   const [loadId, setLoadId] = useState(
-    () => localStorage.getItem('wirschaffendas.configurationId') ?? '',
+    () => localStorage.getItem('wirschiffendas.configurationId') ?? '',
   );
   const [localBusy, setLocalBusy] = useState(false);
 
@@ -146,7 +146,7 @@ function ConfigurationSection({
     try {
       const configuration = await createConfiguration(value);
       localStorage.setItem(
-        'wirschaffendas.configurationId',
+        'wirschiffendas.configurationId',
         configuration.configurationId,
       );
       setLoadId(configuration.configurationId);
@@ -162,7 +162,7 @@ function ConfigurationSection({
     try {
       const configuration = await loadConfiguration(loadId.trim());
       localStorage.setItem(
-        'wirschaffendas.configurationId',
+        'wirschiffendas.configurationId',
         configuration.configurationId,
       );
       onChange({
@@ -451,7 +451,7 @@ export default function App() {
     setBusy(true);
     try {
       const next = await startAnalysis(configuration.configurationId);
-      localStorage.setItem('wirschaffendas.analysisId', next.analysisId);
+      localStorage.setItem('wirschiffendas.analysisId', next.analysisId);
       setAnalysis(next);
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : String(nextError));
@@ -489,7 +489,7 @@ export default function App() {
         <Toolbar>
           <HubRoundedIcon sx={{ mr: 1.5 }} />
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6">WirSchaffenDas</Typography>
+            <Typography variant="h6">WirSchiffenDas</Typography>
             <Typography variant="caption" sx={{ opacity: 0.85 }}>
               Engine Quality Analysis · Microservice Dashboard
             </Typography>

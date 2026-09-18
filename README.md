@@ -1,4 +1,4 @@
-# WirSchaffenDas – Engine Quality Analysis
+# WirSchiffenDas – Engine Quality Analysis
 
 Proof-of-Concept einer Microservice-basierten Qualitätsanalyse für Diesel-Engine-Konfigurationen im Modul SEKA.
 
@@ -59,11 +59,11 @@ Damit werden unter anderem die Unit-/Service-Tests für `AnalysisRun` und den `c
 
 ## Docker-Versionierung
 
-Alle sechs Backend-Images werden gemeinsam unter dem Docker-Hub-Repository `ysirin2s/seka-wirschaffendas` veröffentlicht. Der Service-Name und die Release-Version stehen im Tag, zum Beispiel:
+Alle sechs Backend-Images werden gemeinsam unter dem Docker-Hub-Repository `ysirin2s/seka-wirschiffendas` veröffentlicht. Der Service-Name und die Release-Version stehen im Tag, zum Beispiel:
 
 ```text
-ysirin2s/seka-wirschaffendas:configuration-service-v0.1.0
-ysirin2s/seka-wirschaffendas:fluid-analysis-service-v0.1.0
+ysirin2s/seka-wirschiffendas:configuration-service-v0.1.0
+ysirin2s/seka-wirschiffendas:fluid-analysis-service-v0.1.0
 ```
 
 Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.example`:
@@ -76,7 +76,7 @@ Unter PowerShell kann die Datei alternativ manuell als `.env` kopiert werden. `.
 
 ## Docker-Variante 1 – versionierte Images aus Docker Hub
 
-Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Backend-Images aus `ysirin2s/seka-wirschaffendas` und baut die Web-UI lokal.
+Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Backend-Images aus `ysirin2s/seka-wirschiffendas` und baut die Web-UI lokal.
 
 Beispiel `.env`:
 
@@ -233,7 +233,7 @@ Weitere Details: `docs/testing.md`.
 
 Collection importieren:
 
-`postman/WirSchaffenDas.postman_collection.json`
+`postman/WirSchiffenDas.postman_collection.json`
 
 Happy Path:
 

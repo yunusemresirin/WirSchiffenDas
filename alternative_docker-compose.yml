@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: services/configuration-service/Dockerfile
-    image: ysirin2s/seka-wirschaffendas:configuration-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:configuration-service-v${VERSION}
     ports:
       - "8081:8081"
     volumes:
@@ -13,7 +13,7 @@ services:
     build:
       context: .
       dockerfile: services/analysis-management-service/Dockerfile
-    image: ysirin2s/seka-wirschaffendas:analysis-management-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:analysis-management-service-v${VERSION}
     ports:
       - "8082:8082"
     environment:
@@ -31,7 +31,7 @@ services:
     build:
       context: .
       dockerfile: services/engine-management-analysis-service/Dockerfile
-    image: ysirin2s/seka-wirschaffendas:engine-management-analysis-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:engine-management-analysis-service-v${VERSION}
     ports:
       - "8086:8086"
     environment:
@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: services/electrical-analysis-service/Dockerfile
-    image: ysirin2s/seka-wirschaffendas:electrical-analysis-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:electrical-analysis-service-v${VERSION}
     ports:
       - "8085:8085"
     environment:
@@ -57,7 +57,7 @@ services:
     build:
       context: .
       dockerfile: services/thermal-analysis-service/Dockerfile
-    image: ysirin2s/seka-wirschaffendas:thermal-analysis-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:thermal-analysis-service-v${VERSION}
     ports:
       - "8084:8084"
     environment:
@@ -71,7 +71,7 @@ services:
     build:
       context: .
       dockerfile: services/fluid-analysis-service/Dockerfile
-    image: ysirin2s/seka-wirschaffendas:fluid-analysis-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:fluid-analysis-service-v${VERSION}
     ports:
       - "8083:8083"
     environment:
@@ -101,4 +101,4 @@ volumes:
 
 networks:
   default:
-    name: wirschaffendas-network
+    name: wirschiffendas-network

@@ -1,10 +1,10 @@
-# WirSchaffenDas – Requirements Specification
+# WirSchiffenDas – Requirements Specification
 
 ## 1. Überblick
 
 ### 1.1 Projekt
 
-**Projektname:** WirSchaffenDas – Engine Quality Analysis  
+**Projektname:** WirSchiffenDas – Engine Quality Analysis  
 **Thema:** Microservice-basierte Qualitätsanalyse von Schiffsmotor-Konfigurationen  
 **Projektart:** Semesterprojekt im Modul SEKA
 

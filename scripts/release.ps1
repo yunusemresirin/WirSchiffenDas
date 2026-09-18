@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $DockerHubUser = 'ysirin2s'
-$DockerHubRepository = 'seka-wirschaffendas'
+$DockerHubRepository = 'seka-wirschiffendas'
 $ComposeFile = 'alternative_docker-compose.yml'
 
 $Services = @(
@@ -85,7 +85,7 @@ function Remove-DockerHubTag([string]$AccessToken, [string]$Tag) {
 
 Write-Host ''
 Write-Host '=============================================='
-Write-Host " WirSchaffenDas Docker Release v$Version"
+Write-Host " WirSchiffenDas Docker Release v$Version"
 Write-Host '=============================================='
 
 Write-Step 'Pruefe Docker'
