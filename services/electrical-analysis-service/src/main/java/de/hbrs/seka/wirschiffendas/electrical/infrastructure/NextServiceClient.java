@@ -49,6 +49,7 @@ public class NextServiceClient {
     /**
      * Fallback des Circuit Breakers: meldet den nächsten Service als nicht erreichbar.
      */
+    @SuppressWarnings("unused")
     private void fallback(AnalysisCommand command, String currentResult, Throwable throwable) {
         managementClient.reportStatus(
             command.analysisId(), 
