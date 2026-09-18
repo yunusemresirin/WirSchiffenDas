@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import App from './App';
 
+// Zentrales MUI-Theme (Light/Dark) für die gesamte Anwendung
 const theme = createTheme({
   colorSchemes: {
     light: true,

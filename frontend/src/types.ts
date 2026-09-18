@@ -1,11 +1,15 @@
+// Lebenszyklus-Status eines Algorithmus
 export type AnalysisStatus = 'PENDING' | 'RUNNING' | 'READY' | 'FAILED';
+// Fachliches Ergebnis eines Algorithmus
 export type AnalysisResult = 'OK' | 'FAILED';
+// Algorithmen der Analyse-Kette in Ausführungsreihenfolge
 export type AlgorithmName =
   | 'FLUID'
   | 'THERMAL'
   | 'ELECTRICAL'
   | 'ENGINE_MANAGEMENT';
 
+// Engine-Konfiguration mit den Eingabewerten für die Analyse
 export interface EngineConfiguration {
   configurationId: string;
   oilSystem: string;
@@ -15,11 +19,13 @@ export interface EngineConfiguration {
   engineManagementSystem: string;
 }
 
+// Anfrage zum Anlegen einer Konfiguration (ohne generierte ID)
 export type CreateConfigurationRequest = Omit<
   EngineConfiguration,
   'configurationId'
 >;
 
+// Ausführung eines einzelnen Algorithmus innerhalb einer Analyse
 export interface AlgorithmExecution {
   algorithm: AlgorithmName;
   status: AnalysisStatus;
@@ -27,6 +33,7 @@ export interface AlgorithmExecution {
   message: string | null;
 }
 
+// API-Antwort mit dem Zustand eines Analyse-Laufs
 export interface AnalysisResponse {
   analysisId: string;
   configurationId: string;
@@ -34,6 +41,7 @@ export interface AnalysisResponse {
   algorithms: AlgorithmExecution[];
 }
 
+// Circuit-Breaker-Zustände gemäß Resilience4j
 export type CircuitBreakerState =
   | 'CLOSED'
   | 'OPEN'
@@ -43,6 +51,7 @@ export type CircuitBreakerState =
   | 'METRICS_ONLY'
   | 'UNKNOWN';
 
+// Momentaufnahme der Circuit-Breaker-Metriken eines Service
 export interface CircuitBreakerSnapshot {
   state: CircuitBreakerState;
   failureRate?: string | number;
@@ -51,6 +60,7 @@ export interface CircuitBreakerSnapshot {
   notPermittedCalls?: number;
 }
 
+// Schlüssel der überwachten Services
 export type ServiceKey =
   | 'configuration'
   | 'analysis-management'
@@ -59,6 +69,7 @@ export type ServiceKey =
   | 'electrical'
   | 'engine-management';
 
+// Health-Status eines Service inkl. Circuit-Breaker-Zustand
 export interface ServiceHealth {
   key: ServiceKey;
   reachable: boolean;

@@ -2,7 +2,11 @@ name: Build arc42 PDF
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -48,13 +52,13 @@ jobs:
           retention-days: 30
 
       - name: Prepare release asset
-        if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           cp docs/latex/architecture.pdf WirSchiffenDas-arc42.pdf
           cp docs/latex/presentation.pdf WirSchiffenDas-praesentation.pdf
 
-      - name: Publish rolling development release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+      - name: Publish rolling main release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -63,14 +67,14 @@ jobs:
 
           if gh release view arc42-latest >/dev/null 2>&1; then
             gh release edit arc42-latest \
-              --title "WirSchiffenDas arc42 — development" \
-              --notes "Automatisch erzeugte arc42-Architekturdokumentation aus development. Commit: ${GITHUB_SHA}" \
+              --title "WirSchiffenDas arc42 — main" \
+              --notes "Automatisch erzeugte arc42-Architekturdokumentation aus main. Commit: ${GITHUB_SHA}" \
               --prerelease
           else
             gh release create arc42-latest \
               --verify-tag \
-              --title "WirSchiffenDas arc42 — development" \
-              --notes "Automatisch erzeugte arc42-Architekturdokumentation aus development. Commit: ${GITHUB_SHA}" \
+              --title "WirSchiffenDas arc42 — main" \
+              --notes "Automatisch erzeugte arc42-Architekturdokumentation aus main. Commit: ${GITHUB_SHA}" \
               --prerelease
           fi
 

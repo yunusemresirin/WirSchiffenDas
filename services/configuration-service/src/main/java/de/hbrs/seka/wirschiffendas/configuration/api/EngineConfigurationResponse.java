@@ -2,6 +2,9 @@ package de.hbrs.seka.wirschiffendas.configuration.api;
 
 import de.hbrs.seka.wirschiffendas.configuration.domain.EngineConfiguration;
 
+/**
+ * API-Antwort mit den Daten einer Engine-Konfiguration.
+ */
 public record EngineConfigurationResponse(
         String configurationId,
         String oilSystem,

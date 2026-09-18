@@ -4,6 +4,9 @@ import de.hbrs.seka.wirschiffendas.analysismanagement.domain.*;
 
 import java.util.List;
 
+/**
+ * API-Antwort mit dem Zustand eines Analyse-Laufs und allen Algorithmus-Ausführungen.
+ */
 public record AnalysisResponse(
         String analysisId,
         String configurationId,

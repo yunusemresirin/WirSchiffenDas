@@ -2,6 +2,9 @@ package de.hbrs.seka.wirschiffendas.analysismanagement.domain;
 
 import jakarta.persistence.*;
 
+/**
+ * Ausführung eines einzelnen Algorithmus innerhalb eines Analyse-Laufs.
+ */
 @Entity
 @Table(name = "algorithm_executions")
 public class AlgorithmExecution {
@@ -33,6 +36,9 @@ public class AlgorithmExecution {
         this.status = AnalysisStatus.PENDING;
     }
 
+    /**
+     * Setzt den Status; bei RUNNING/PENDING wird ein altes Ergebnis verworfen, bei FAILED auf FAILED gesetzt.
+     */
     public void updateStatus(AnalysisStatus status, String message) {
         this.status = status;
         this.message = message;
@@ -44,6 +50,9 @@ public class AlgorithmExecution {
         }
     }
 
+    /**
+     * Setzt Status, Ergebnis und Meldung gemeinsam.
+     */
     public void updateResult(AnalysisStatus status, AnalysisResult result, String message) {
         this.status = status;
         this.result = result;

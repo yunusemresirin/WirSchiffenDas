@@ -6,6 +6,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST-Endpunkte zum Starten, Abfragen und Wiederholen von Analysen.
+ */
 @RestController
 public class AnalysisController {
 
@@ -15,26 +18,40 @@ public class AnalysisController {
         this.service = service;
     }
 
+    /**
+     * Startet eine neue Analyse. Antwortet mit 202 Accepted, da die Verarbeitung asynchron im Hintergrund läuft.
+     */
     @PostMapping("/api/analyses")
     public ResponseEntity<AnalysisResponse> start(
             @Valid @RequestBody StartAnalysisRequest request) {
-        return ResponseEntity.accepted()
-                .body(AnalysisResponse.from(service.start(request.configurationId())));
+        return ResponseEntity
+            .accepted() // 202 Accepted: Anfrage angenommen, Verarbeitung läuft asynchron weiter
+            .body(AnalysisResponse.from(service.start(request.configurationId())));
     }
 
+    /**
+     * Liefert den aktuellen Zustand einer Analyse.
+     */
     @GetMapping("/api/analyses/{analysisId}")
     public AnalysisResponse get(@PathVariable String analysisId) {
         return AnalysisResponse.from(service.get(analysisId));
     }
 
+    /**
+     * Wiederholt einen fehlgeschlagenen Algorithmus. Antwortet mit 202 Accepted, da die Verarbeitung asynchron läuft.
+     */
     @PostMapping("/api/analyses/{analysisId}/algorithms/{algorithm}/retry")
     public ResponseEntity<AnalysisResponse> retry(
             @PathVariable String analysisId,
             @PathVariable AlgorithmName algorithm) {
-        return ResponseEntity.accepted()
-                .body(AnalysisResponse.from(service.retry(analysisId, algorithm)));
+        return ResponseEntity
+            .accepted() // 202 Accepted: Anfrage angenommen, Verarbeitung läuft asynchron weiter
+            .body(AnalysisResponse.from(service.retry(analysisId, algorithm)));
     }
 
+    /**
+     * Interner Callback: aktualisiert den Status eines Algorithmus.
+     */
     @PutMapping("/internal/analyses/{analysisId}/algorithms/{algorithm}/status")
     public AnalysisResponse updateStatus(
             @PathVariable String analysisId,
@@ -44,6 +61,9 @@ public class AnalysisController {
                 service.updateStatus(analysisId, algorithm, request.status(), request.message()));
     }
 
+    /**
+     * Interner Callback: aktualisiert das Ergebnis eines Algorithmus.
+     */
     @PutMapping("/internal/analyses/{analysisId}/algorithms/{algorithm}/result")
     public AnalysisResponse updateResult(
             @PathVariable String analysisId,

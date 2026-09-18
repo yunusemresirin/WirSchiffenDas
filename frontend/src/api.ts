@@ -9,6 +9,9 @@ import type {
   ServiceKey,
 } from './types';
 
+/**
+ * Führt einen JSON-Request aus und wirft bei Fehlerstatus eine Error mit Servermeldung.
+ */
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body !== undefined) {
@@ -28,6 +31,9 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/**
+ * Legt eine neue Engine-Konfiguration an.
+ */
 export function createConfiguration(
   request: CreateConfigurationRequest,
 ): Promise<EngineConfiguration> {
@@ -37,12 +43,18 @@ export function createConfiguration(
   });
 }
 
+/**
+ * Lädt eine Engine-Konfiguration anhand ihrer ID.
+ */
 export function loadConfiguration(
   configurationId: string,
 ): Promise<EngineConfiguration> {
   return requestJson(`/api/configurations/${encodeURIComponent(configurationId)}`);
 }
 
+/**
+ * Startet eine Analyse für eine bestehende Konfiguration.
+ */
 export function startAnalysis(
   configurationId: string,
 ): Promise<AnalysisResponse> {
@@ -52,10 +64,16 @@ export function startAnalysis(
   });
 }
 
+/**
+ * Lädt den aktuellen Zustand einer Analyse.
+ */
 export function loadAnalysis(analysisId: string): Promise<AnalysisResponse> {
   return requestJson(`/api/analyses/${encodeURIComponent(analysisId)}`);
 }
 
+/**
+ * Wiederholt einen fehlgeschlagenen Algorithmus.
+ */
 export function retryAlgorithm(
   analysisId: string,
   algorithm: AlgorithmName,
@@ -84,6 +102,9 @@ const breakerStates = new Set<CircuitBreakerState>([
   'METRICS_ONLY',
 ]);
 
+/**
+ * Sucht rekursiv nach einem Circuit-Breaker-Snapshot in der Actuator-Antwort.
+ */
 function findCircuitBreaker(value: unknown): CircuitBreakerSnapshot | null {
   if (!value || typeof value !== 'object') {
     return null;
@@ -117,6 +138,9 @@ function findCircuitBreaker(value: unknown): CircuitBreakerSnapshot | null {
   return null;
 }
 
+/**
+ * Fragt den Health-Endpunkt eines Service ab (mit Timeout) und liest den Circuit-Breaker-Zustand aus.
+ */
 async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 1500);
@@ -130,8 +154,8 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
     const text = await response.text();
     const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
 
-    // A Resilience4j OPEN breaker intentionally makes Actuator health DOWN/503.
-    // Receiving an HTTP response still proves that the source service itself is reachable.
+    // Ein OPEN Circuit Breaker setzt den Actuator-Status absichtlich auf DOWN/503.
+    // Eine HTTP-Antwort beweist dennoch, dass der Service selbst erreichbar ist.
     return {
       key,
       reachable: true,
@@ -157,6 +181,9 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
   }
 }
 
+/**
+ * Fragt die Health-Endpunkte aller Services parallel ab.
+ */
 export async function loadSystemHealth(): Promise<ServiceHealth[]> {
   return Promise.all(serviceKeys.map(fetchHealth));
 }
