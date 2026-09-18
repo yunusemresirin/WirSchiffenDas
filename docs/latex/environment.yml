@@ -1,0 +1,15 @@
+# Conda environment for building the arc42 LaTeX documentation.
+#
+# Tectonic is a self-contained LaTeX engine: it downloads the required
+# packages (babel, tikz, fancyhdr, ...) from its bundle on the first build,
+# so no full TeX Live / MiKTeX installation is needed.
+#
+# Usage:
+#   conda env create -f environment.yml
+#   conda activate latex
+#   tectonic -X compile architecture.tex   # or: ./build.ps1
+name: latex
+channels:
+  - conda-forge
+dependencies:
+  - tectonic>=0.15

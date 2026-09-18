@@ -1,0 +1,153 @@
+\section{Lösungsstrategie}
+\subsection{Strategic Domain-Driven Design}
+Die Zerlegung folgt dem Grundsatz \emph{business capability first}. Services werden nicht nach Presentation-, Business- und Data-Layer getrennt, sondern entlang fachlicher Verantwortlichkeiten. Damit wird insbesondere das Anti-Pattern \emph{Wrong Cut} vermieden.
+
+\begin{tabularx}{\textwidth}{L{4.0cm}L{5.0cm}Y}
+\toprule
+\textbf{Bounded Context} & \textbf{Microservice} & \textbf{Verantwortung} \\
+\midrule
+Configuration Management & \makecell[l]{configuration-\\service} & Konfiguration validieren, speichern und lesen. \\
+Analysis Management & \makecell[l]{analysis-management-\\service} & AnalysisRun, Status, Resultate, Overall Result und Retry verwalten. \\
+Fluid Analysis & \makecell[l]{fluid-analysis-\\service} & Öl- und kraftstoffbezogene Konfigurationsanteile analysieren. \\
+Thermal Analysis & \makecell[l]{thermal-analysis-\\service} & Thermisch geprägte Konfigurationsanteile simuliert analysieren. \\
+Electrical Analysis & \makecell[l]{electrical-analysis-\\service} & Elektrische Konfigurationsanteile simuliert analysieren. \\
+Engine Management Analysis & \makecell[l]{engine-management-\\analysis-service} & Finale EMS-Analyse unter Einbezug vorheriger Resultate durchführen. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Datenhoheit und Integrationsprinzip}
+Configuration Management besitzt die Engine-Konfigurationen. Analysis Management besitzt die Analysezustände und Resultate. Die vier Analyse-Services bleiben stateless. Ein universales, gemeinsam genutztes Datenmodell wird bewusst vermieden. Integration erfolgt über DTOs und klar definierte Schnittstellen an den Context-Grenzen.
+
+\vfill
+\begin{center}
+\begin{tikzpicture}[
+  node distance=10mm and 25mm,
+  every node/.style={font=\small},
+  svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=52mm,minimum height=10mm,align=center},
+  data/.style={draw,ellipse,fill=lightgray,minimum width=42mm,minimum height=9mm,align=center}
+]
+\node[svc] (cfg) {Configuration Management};
+\node[data,below=of cfg] (cfgdb) {Configuration DB};
+\node[svc,right=of cfg] (am) {Analysis Management};
+\node[data,below=of am] (amdb) {Analysis DB};
+\draw[-{Latex},thick] (cfg) -- (cfgdb);
+\draw[-{Latex},thick] (am) -- (amdb);
+\draw[-{Latex},dashed] (cfg) -- node[above]{DTO / REST} (am);
+\end{tikzpicture}
+\end{center}
+\vfill
+
+\newpage
+
+\section{Bausteinsicht}
+\subsection{Ebene 1: Systemübersicht}
+Die Architektur besteht aus einem Frontend und sechs Spring-Boot-Microservices. Configuration Management und Analysis Management verwalten Zustand. Die Analyse-Services sind zustandslos und bilden gemeinsam die eigentliche Qualitätsanalyse.
+
+\vfill
+\begin{center}
+\begin{tikzpicture}[
+  node distance=9mm and 20mm,
+  every node/.style={font=\small},
+  svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=55mm,minimum height=10mm,align=center},
+  data/.style={draw,ellipse,fill=lightgray,minimum width=43mm,minimum height=9mm,align=center},
+  ana/.style={draw=darkblue,rounded corners,fill=white,minimum width=55mm,minimum height=10mm,align=center}
+]
+\node[svc] (ui) at (0,0) {React/MUI Frontend};
+\node[svc] (cfg) at (-4.0,-1.7) {Configuration Service};
+\node[svc] (am) at (4.0,-1.7) {Analysis Management Service};
+\node[data] (cfgdb) at (-4.0,-3.1) {Configuration DB};
+\node[data] (amdb) at (0.8,-3.1) {Analysis DB};
+\node[ana] (fluid) at (4.0,-5.0) {Fluid Analysis};
+\node[ana] (thermal) at (4.0,-6.4) {Thermal Analysis};
+\node[ana] (electrical) at (4.0,-7.8) {Electrical Analysis};
+\node[ana] (ems) at (4.0,-9.2) {Engine Management Analysis};
+\draw[-{Latex},thick] (ui) -- (cfg);
+\draw[-{Latex},thick] (ui) -- (am);
+\draw[-{Latex}] (cfg) -- (cfgdb);
+\draw[-{Latex}] (am) -- (amdb);
+\draw[-{Latex},thick] (am) -- node[right,pos=0.55]{Start} (fluid);
+\draw[-{Latex},thick] (fluid) -- (thermal);
+\draw[-{Latex},thick] (thermal) -- (electrical);
+\draw[-{Latex},thick] (electrical) -- (ems);
+\end{tikzpicture}
+\end{center}
+\vfill
+
+\textit{Alle Analyse-Services melden Status und Resultate per Callback an Analysis Management zurück.}
+
+\subsection{Externe Schnittstellen}
+\begin{tabularx}{\textwidth}{L{4.9cm}Y}
+\toprule
+\textbf{Endpoint} & \textbf{Bedeutung} \\
+\midrule
+\apiendpoint{POST /api/configurations} & Neue Engine-Konfiguration anlegen. \\
+\apiendpoint{GET /api/configurations/{id}} & Gespeicherte Konfiguration laden. \\
+\apiendpoint{POST /api/analyses} & Analyse für eine Konfiguration starten. \\
+\apiendpoint{GET /api/analyses/{id}} & Status, Einzelresultate und Overall Result abrufen. \\
+\apiendpoint{POST /api/analyses/{id}/algorithms/{algorithm}/retry} & Einen fehlgeschlagenen Algorithmus gezielt wiederholen. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Interne Schnittstellen}
+Jeder Analyse-Service akzeptiert einen Analyseauftrag über \apiendpoint{POST /internal/analyses}. Status und Resultate werden per Callback an Analysis Management gemeldet. Der Integrationsvertrag enthält die Analyse-ID, die benötigten Konfigurationsdaten und - sofern erforderlich - bereits vorhandene Ergebnisse.
+
+\newpage
+
+\section{Laufzeitsicht}
+\subsection{Happy Path}
+Analysis Management erzeugt den \code{AnalysisRun} und startet ausschlie\ss{}lich den Anchor-Algorithmus \emph{Fluid}. Danach gibt jeder erfolgreiche Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Dadurch entsteht eine sequenzielle Choreographie. Jeder Schritt meldet seinen Status zusätzlich an Analysis Management zurück.
+
+\vfill
+\begin{center}
+\begin{tikzpicture}[
+  node distance=10mm,
+  every node/.style={font=\small},
+  stepbox/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=27mm,minimum height=11mm,align=center}
+]
+\node[stepbox] (am) {Analysis\\Management};
+\node[stepbox,right=of am] (f) {Fluid};
+\node[stepbox,right=of f] (t) {Thermal};
+\node[stepbox,below=of t] (e) {Electrical};
+\node[stepbox,left=of e] (m) {Engine\\Management};
+\draw[-{Latex},thick] (am) -- node[above]{start} (f);
+\draw[-{Latex},thick] (f) -- (t);
+\draw[-{Latex},thick] (t) -- (e);
+\draw[-{Latex},thick] (e) -- (m);
+\end{tikzpicture}
+\end{center}
+\vfill
+
+\begin{enumerate}
+  \item Analysis Management legt einen neuen AnalysisRun mit initialen Zuständen an.
+  \item Fluid Analysis startet und meldet \code{RUNNING}.
+  \item Nach erfolgreichem Abschluss meldet Fluid \code{READY/OK} und startet Thermal.
+  \item Thermal und Electrical arbeiten analog weiter.
+  \item Engine Management bildet den letzten fachlichen Schritt und kann vorherige Ergebnisse berücksichtigen.
+  \item Sobald alle vier Algorithmen erfolgreich sind, wird das Overall Result auf \code{OK} gesetzt.
+\end{enumerate}
+
+\subsection{Fehlerfall, Circuit Breaker und Retry}
+Beim Ausfall von Thermal darf der Fehler nicht die gesamte Anwendung blockieren. Der ausgehende Aufruf wird durch Resilience4j geschützt. Der betroffene Schritt wird als fehlgeschlagen markiert und kann später gezielt wiederholt werden.
+
+\vfill
+\begin{center}
+\begin{tikzpicture}[
+  node distance=11mm and 9mm,
+  every node/.style={font=\small},
+  box/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=38mm,minimum height=11mm,align=center},
+  fail/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=38mm,minimum height=11mm,align=center}
+]
+\node[box] (fluid) {Fluid Analysis};
+\node[fail,right=of fluid] (cb) {Circuit Breaker\\Thermal nicht erreichbar};
+\node[box,right=of cb] (am) {Analysis Management\\THERMAL = FAILED};
+\draw[-{Latex},thick] (fluid) -- (cb);
+\draw[-{Latex},thick] (cb) -- (am);
+\node[box,below=13mm of cb] (retry) {Retry nach Wiederherstellung\\ab Thermal fortsetzen};
+\draw[-{Latex},thick,dashed] (am.south) |- (retry.east);
+\end{tikzpicture}
+\end{center}
+\vfill
+
+Bereits erfolgreiche Vorgänger werden beim Retry nicht erneut ausgeführt. Nach einem erfolgreichen Thermal-Retry wird die Choreographie über Electrical bis Engine Management fortgesetzt.
+
+\newpage

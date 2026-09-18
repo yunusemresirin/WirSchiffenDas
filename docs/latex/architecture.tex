@@ -1,0 +1,118 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.15cm,bottom=2.2cm,headheight=15pt]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{xurl}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{lastpage}
+\usepackage[ngerman]{datetime2}
+\DTMsetdatestyle{ddmmyyyy}
+
+\definecolor{hbrsblue}{HTML}{00A6C8}
+\definecolor{darkblue}{HTML}{0A556B}
+\definecolor{lightblue}{HTML}{E8F7FA}
+\definecolor{lightgray}{HTML}{F3F5F6}
+\definecolor{warnorange}{HTML}{B26A00}
+\definecolor{okgreen}{HTML}{2E7D32}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=darkblue,
+  urlcolor=darkblue,
+  citecolor=darkblue,
+  pdftitle={WirSchiffenDas - arc42 Architekturbeschreibung}
+}
+\urlstyle{tt}
+
+\setlength{\emergencystretch}{3em}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.22}
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.35em,topsep=0.4em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.35em,topsep=0.4em}
+\raggedbottom
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\titleformat{\section}{\Large\bfseries\color{darkblue}}{\thesection}{0.65em}{}
+\titleformat{\subsection}{\large\bfseries\color{darkblue}}{\thesubsection}{0.55em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.6em}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.45em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small WirSchiffenDas - Engine Quality Analysis}
+\fancyhead[R]{\small SEKA, SS 2026}
+\fancyfoot[L]{\small arc42 Architekturbeschreibung}
+\fancyfoot[R]{\small Seite \thepage\ von \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0.3pt}
+
+\newcommand{\hbrslogo}{%
+\begin{tikzpicture}[baseline=-0.4ex,scale=0.64]
+  \draw[line width=2.5pt,hbrsblue] (0,0) circle (0.34);
+  \fill[hbrsblue] (1.0,0) circle (0.34);
+  \node[anchor=west,text=black,font=\sffamily\bfseries\large] at (1.55,0.15) {Hochschule};
+  \node[anchor=west,text=black,font=\sffamily\bfseries\large] at (1.55,-0.5) {Bonn-Rhein-Sieg};
+\end{tikzpicture}}
+
+\newcommand{\tagbox}[2]{\colorbox{#1!12}{\textcolor{#1}{\textbf{#2}}}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\apiendpoint}[1]{\path{#1}}
+
+\begin{document}
+
+\thispagestyle{empty}
+\begin{center}
+\hbrslogo
+
+\vspace{2.2cm}
+{\Huge\bfseries\color{darkblue} WirSchiffenDas}\par
+\vspace{0.45cm}
+{\LARGE Engine Quality Analysis}\par
+\vspace{0.25cm}
+{\Large arc42 Architekturbeschreibung}\par
+
+\vspace{1.6cm}
+\tagbox{hbrsblue}{Service-basierte Komponenten-Architekturen (SEKA)}
+
+\vspace{0.25cm}
+{\large Theodoros Bampis \& Yunus Emre Sirin}\par
+{\large Sommersemester 2026}\par
+
+\vfill
+\begin{tabular}{rl}
+\textbf{Dokumenttyp:} & Architekturdokumentation nach arc42 \\
+\textbf{Architekturstil:} & Microservices \\
+\textbf{Schwerpunkt:} & Docker und Docker Compose \\
+\textbf{Stand:} & \DTMtoday \\
+\end{tabular}
+\vspace{1.0cm}
+\end{center}
+\newpage
+
+\tableofcontents
+\newpage
+
+\input{sections/part-1-goals-context.tex}
+\input{sections/part-2-solution-runtime.tex}
+\input{sections/part-3-deployment-quality.tex}
+\input{sections/part-4-risks-summary.tex}
+
+\end{document}

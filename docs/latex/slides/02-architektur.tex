@@ -1,0 +1,97 @@
+% ===========================================================================
+% 02 - Architektur: Service-Landschaft und Choreographie
+% ===========================================================================
+
+\begin{frame}{Service-Landschaft}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item \textbf{6 Microservices}, je ein Spring-Boot-Prozess.
+        \item \textbf{2 zustandsbehaftet}: Configuration, Analysis Management.
+        \item \textbf{4 stateless}: die Analyse-Services.
+        \item Kommunikation ausschließlich über REST.
+      \end{itemize}
+
+      \vspace{0.3cm}
+      \begin{block}{Fachlicher Schnitt}
+        \small Jeder Service kapselt eine Business Capability --
+        kein technischer Layer-Schnitt (ADR-01).
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[
+        node distance=4mm and 8mm,
+        every node/.style={font=\scriptsize},
+        svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=34mm,minimum height=6mm,align=center},
+        data/.style={draw,ellipse,fill=lightgray,minimum width=26mm,minimum height=5mm,align=center},
+        ana/.style={draw=darkblue,rounded corners,fill=white,minimum width=34mm,minimum height=6mm,align=center}
+      ]
+      \node[svc] (cfg) {configuration-service};
+      \node[svc,below=of cfg] (am) {analysis-management-service};
+      \node[data,below=of cfg] (cfgdb) {Configuration DB};
+      \node[data,below=of am] (amdb) {Analysis DB};
+      \node[ana,below=of amdb] (fluid) {fluid-analysis};
+      \node[ana,below=of fluid] (thermal) {thermal-analysis};
+      \node[ana,below=of thermal] (elec) {electrical-analysis};
+      \node[ana,below=of elec] (ems) {engine-management};
+      \draw[-{Latex}] (cfg) -- (cfgdb);
+      \draw[-{Latex}] (am) -- (amdb);
+      \draw[-{Latex},thick] (am) -- (fluid);
+      \draw[-{Latex},thick] (fluid) -- (thermal);
+      \draw[-{Latex},thick] (thermal) -- (elec);
+      \draw[-{Latex},thick] (elec) -- (ems);
+      \end{tikzpicture}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Choreographie statt Orchestration}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \textbf{Ablauf}
+      \begin{enumerate}
+        \item Analysis Management startet \textbf{nur} den Anchor \code{FLUID}.
+        \item Jeder erfolgreiche Service ruft selbst den nächsten auf.
+        \item Ergebnisse werden im \code{AnalysisCommand} mitgereicht.
+        \item Engine Management berücksichtigt Vorergebnisse.
+      \end{enumerate}
+
+      \vspace{0.2cm}
+      \begin{block}{Kernaussage}
+        \small Kein zentraler Orchestrator -- die Ablaufsteuerung liegt
+        verteilt in den Services (ADR-03).
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[
+        node distance=5mm,
+        every node/.style={font=\scriptsize},
+        stepbox/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=20mm,minimum height=8mm,align=center}
+      ]
+      \node[stepbox] (am) {Analysis\\Management};
+      \node[stepbox,right=of am] (f) {Fluid};
+      \node[stepbox,right=of f] (t) {Thermal};
+      \node[stepbox,below=of t] (e) {Electrical};
+      \node[stepbox,left=of e] (m) {Engine\\Management};
+      \draw[-{Latex},thick] (am) -- node[above]{start} (f);
+      \draw[-{Latex},thick] (f) -- (t);
+      \draw[-{Latex},thick] (t) -- (e);
+      \draw[-{Latex},thick] (e) -- (m);
+      \end{tikzpicture}
+      \end{center}
+
+      \vspace{0.2cm}
+      \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={font=\scriptsize},
+        cb/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=26mm,minimum height=8mm,align=center}
+      ]
+      \node[cb] {Circuit Breaker\\Thermal nicht erreichbar};
+      \end{tikzpicture}
+      \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
