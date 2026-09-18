@@ -9,26 +9,56 @@ import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Startet den nächsten Algorithmus in der Analyse-Kette und meldet bei Nichterreichbarkeit einen Fehler.
+ */
 @Component
 public class NextServiceClient {
 
     private final RestClient client;
     private final AnalysisManagementClient managementClient;
 
-    public NextServiceClient(RestClient.Builder builder, @Value("${services.next.url}") String nextUrl, AnalysisManagementClient managementClient) {
+    public NextServiceClient(
+        RestClient.Builder builder, 
+        @Value("${services.next.url}") String nextUrl, 
+        AnalysisManagementClient managementClient
+    ) {
         this.client = builder.baseUrl(nextUrl).build();
         this.managementClient = managementClient;
     }
 
+    /**
+     * Übergibt das eigene Ergebnis an den nächsten Service der Kette.
+     */
     @CircuitBreaker(name = "nextService", fallbackMethod = "fallback")
     public void startNext(AnalysisCommand command, String currentResult) {
         var results = new ArrayList<>(command.previousResults());
-        results.add(Map.of("algorithm", "FLUID", "result", currentResult));
+        
+        results.add(Map.of(
+            "algorithm", "FLUID", 
+            "result", currentResult
+        ));
+
         AnalysisCommand nextCommand = new AnalysisCommand(command.analysisId(), command.configuration(), results);
-        client.post().uri("/internal/analyses").body(nextCommand).retrieve().toBodilessEntity();
+        
+        client
+            .post() // POST-Request
+            .uri("/internal/analyses") // Endpunkt des nächsten Service
+            .body(nextCommand) // Folgeauftrag mit angereicherten Ergebnissen
+            .retrieve() // Request ausführen
+            .toBodilessEntity(); // Antwort ohne Body verarbeiten
     }
 
+    /**
+     * Fallback des Circuit Breakers: meldet den nächsten Service als nicht erreichbar.
+     */
+    @SuppressWarnings("unused")
     private void fallback(AnalysisCommand command, String currentResult, Throwable throwable) {
-        managementClient.reportStatus(command.analysisId(), "THERMAL", "FAILED", "thermal-analysis-service unavailable");
+        managementClient.reportStatus(
+            command.analysisId(), 
+            "THERMAL", 
+            "FAILED", 
+            "thermal-analysis-service unavailable"
+        );
     }
 }

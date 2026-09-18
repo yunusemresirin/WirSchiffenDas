@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/**
+ * Startet den passenden Analyse-Service für einen Algorithmus und schützt den Aufruf per Circuit Breaker.
+ */
 @Component
 public class AnalysisServiceStarter {
 
@@ -28,8 +31,12 @@ public class AnalysisServiceStarter {
         this.engineManagementUrl = engineManagementUrl;
     }
 
+    /**
+     * Sendet den Analyseauftrag an den zum Algorithmus gehörenden Service.
+     */
     @CircuitBreaker(name = "analysisServiceStarter")
     public void start(AlgorithmName algorithm, AnalysisCommand command) {
+        // Basis-URL des Zielservice anhand des Algorithmus wählen
         String baseUrl = switch (algorithm) {
             case FLUID -> fluidUrl;
             case THERMAL -> thermalUrl;
@@ -39,10 +46,10 @@ public class AnalysisServiceStarter {
 
         builder.baseUrl(baseUrl)
                 .build()
-                .post()
-                .uri("/internal/analyses")
-                .body(command)
-                .retrieve()
-                .toBodilessEntity();
+                .post() // POST-Request
+                .uri("/internal/analyses") // interner Start-Endpunkt des Analyse-Service
+                .body(command) // Analyseauftrag als JSON serialisieren
+                .retrieve() // Request ausführen
+                .toBodilessEntity(); // Antwort ohne Body verarbeiten
     }
 }

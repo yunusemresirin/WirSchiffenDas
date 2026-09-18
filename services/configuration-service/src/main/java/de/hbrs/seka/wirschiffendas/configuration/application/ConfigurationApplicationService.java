@@ -9,6 +9,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
+/**
+ * Anwendungsdienst zum Anlegen und Laden von Engine-Konfigurationen.
+ */
 @Service
 public class ConfigurationApplicationService {
 
@@ -18,6 +21,9 @@ public class ConfigurationApplicationService {
         this.repository = repository;
     }
 
+    /**
+     * Legt eine neue Konfiguration mit generierter ID an.
+     */
     public EngineConfiguration create(CreateConfigurationRequest request) {
         EngineConfiguration configuration = new EngineConfiguration(
                 "C-" + UUID.randomUUID(),
@@ -30,6 +36,9 @@ public class ConfigurationApplicationService {
         return repository.save(configuration);
     }
 
+    /**
+     * Lädt eine Konfiguration oder wirft 404, wenn sie nicht existiert.
+     */
     public EngineConfiguration get(String configurationId) {
         return repository.findById(configurationId)
                 .orElseThrow(() -> new ResponseStatusException(
