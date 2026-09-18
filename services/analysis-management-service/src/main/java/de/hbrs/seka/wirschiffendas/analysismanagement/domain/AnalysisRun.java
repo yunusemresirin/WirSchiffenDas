@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Aggregat eines Analyse-Laufs mit allen Algorithmus-Ausführungen und dem Gesamtergebnis.
+ */
 @Entity
 @Table(name = "analysis_runs")
 public class AnalysisRun {
@@ -42,6 +45,9 @@ public class AnalysisRun {
                 .orElseThrow();
     }
 
+    /**
+     * Leitet das Gesamtergebnis aus den Einzelergebnissen ab: FAILED bei Fehler, sonst OK oder null solange offen.
+     */
     public void recalculateOverallResult() {
         boolean failed = executions.stream()
                 .anyMatch(e -> e.getStatus() == AnalysisStatus.FAILED || e.getResult() == AnalysisResult.FAILED);

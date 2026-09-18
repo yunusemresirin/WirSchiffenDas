@@ -92,6 +92,9 @@ const breakerEdges: Array<{
   { source: 'electrical', target: 'engine-management', label: 'Next' },
 ];
 
+/**
+ * Ordnet einem Analyse-Status die passende Chip-Farbe zu.
+ */
 function statusColor(status: AnalysisStatus): ChipProps['color'] {
   switch (status) {
     case 'READY':
@@ -105,6 +108,9 @@ function statusColor(status: AnalysisStatus): ChipProps['color'] {
   }
 }
 
+/**
+ * Ordnet einem Circuit-Breaker-Zustand die passende Chip-Farbe zu.
+ */
 function breakerColor(state: CircuitBreakerState): ChipProps['color'] {
   switch (state) {
     case 'CLOSED':
@@ -119,6 +125,9 @@ function breakerColor(state: CircuitBreakerState): ChipProps['color'] {
   }
 }
 
+/**
+ * Formular zum Anlegen und Laden einer Engine-Konfiguration.
+ */
 function ConfigurationSection({
   value,
   selected,
@@ -269,6 +278,9 @@ function ConfigurationSection({
   );
 }
 
+/**
+ * Karte mit Status und Ergebnis eines einzelnen Algorithmus inkl. Retry-Button.
+ */
 function AlgorithmCard({
   execution,
   onRetry,
@@ -326,6 +338,9 @@ function AlgorithmCard({
   );
 }
 
+/**
+ * Karte mit Erreichbarkeit und Circuit-Breaker-Zustand eines Service.
+ */
 function RuntimeHealthCard({ health }: { health: ServiceHealth }) {
   return (
     <Paper variant="outlined" sx={{ p: 1.5, minWidth: 180 }}>
@@ -353,6 +368,9 @@ function RuntimeHealthCard({ health }: { health: ServiceHealth }) {
   );
 }
 
+/**
+ * Visualisiert eine Kante der Analyse-Kette mit dem Circuit-Breaker-Zustand des Aufrufers.
+ */
 function BreakerEdge({
   sourceHealth,
   target,
@@ -400,6 +418,9 @@ function BreakerEdge({
   );
 }
 
+/**
+ * Hauptkomponente: Konfiguration, Analyse-Steuerung und Runtime-Monitoring.
+ */
 export default function App() {
   const [configurationDraft, setConfigurationDraft] =
     useState<CreateConfigurationRequest>(emptyConfiguration);
@@ -431,12 +452,14 @@ export default function App() {
 
   useEffect(() => {
     void refreshHealth();
+    // Health-Status aller Services alle 2 Sekunden neu abfragen
     const interval = window.setInterval(() => void refreshHealth(), 2000);
     return () => window.clearInterval(interval);
   }, [refreshHealth]);
 
   useEffect(() => {
     if (!analysis?.analysisId) return;
+    // Nur pollen, solange mindestens ein Algorithmus noch läuft
     const hasActiveAlgorithm = analysis.algorithms.some(
       (item) => item.status === 'PENDING' || item.status === 'RUNNING',
     );

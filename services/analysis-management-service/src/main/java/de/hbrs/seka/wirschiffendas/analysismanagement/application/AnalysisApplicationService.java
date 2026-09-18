@@ -9,6 +9,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Anwendungsdienst, der Analyse-Läufe startet, aktualisiert und wiederholt.
+ */
 @Service
 public class AnalysisApplicationService {
 
@@ -25,14 +28,17 @@ public class AnalysisApplicationService {
         this.serviceStarter = serviceStarter;
     }
 
+    /**
+     * Startet einen neuen Analyse-Lauf mit dem Fluid-Algorithmus als erstem Schritt.
+     */
     public AnalysisRun start(String configurationId) {
         ConfigurationSnapshot configuration = configurationClient.get(configurationId);
         AnalysisRun run = AnalysisRun.start("A-" + UUID.randomUUID(), configurationId);
         AlgorithmExecution fluid = run.execution(AlgorithmName.FLUID);
         fluid.updateStatus(AnalysisStatus.RUNNING, null);
 
-        // Repository transaction is committed before the external HTTP call.
-        // This avoids a race where an asynchronous callback arrives before AnalysisRun exists.
+        // Die Repository-Transaktion wird vor dem externen HTTP-Aufruf committet.
+        // Das verhindert ein Race, bei dem ein asynchroner Callback eintrifft, bevor der AnalysisRun existiert.
         run = repository.saveAndFlush(run);
 
         try {
@@ -40,6 +46,7 @@ public class AnalysisApplicationService {
                     AlgorithmName.FLUID,
                     new AnalysisCommand(run.getAnalysisId(), configuration, List.of()));
         } catch (RuntimeException exception) {
+            // Start fehlgeschlagen: Fluid-Algorithmus als FAILED markieren
             fluid = run.execution(AlgorithmName.FLUID);
             fluid.updateStatus(AnalysisStatus.FAILED, "Fluid analysis service unavailable");
             run.recalculateOverallResult();
@@ -49,10 +56,16 @@ public class AnalysisApplicationService {
         return run;
     }
 
+    /**
+     * Liefert einen Analyse-Lauf anhand seiner ID.
+     */
     public AnalysisRun get(String analysisId) {
         return find(analysisId);
     }
 
+    /**
+     * Aktualisiert den Status eines Algorithmus und berechnet das Gesamtergebnis neu.
+     */
     public AnalysisRun updateStatus(
             String analysisId,
             AlgorithmName algorithm,
@@ -64,6 +77,9 @@ public class AnalysisApplicationService {
         return repository.save(run);
     }
 
+    /**
+     * Aktualisiert das Ergebnis eines Algorithmus und berechnet das Gesamtergebnis neu.
+     */
     public AnalysisRun updateResult(
             String analysisId,
             AlgorithmName algorithm,
@@ -76,18 +92,22 @@ public class AnalysisApplicationService {
         return repository.save(run);
     }
 
+    /**
+     * Wiederholt einen fehlgeschlagenen Algorithmus.
+     */
     public AnalysisRun retry(String analysisId, AlgorithmName algorithm) {
         AnalysisRun run = find(analysisId);
         AlgorithmExecution execution = run.execution(algorithm);
 
+        // Nur fehlgeschlagene Algorithmen dürfen erneut ausgeführt werden
         if (execution.getStatus() != AnalysisStatus.FAILED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only failed algorithms can be retried");
         }
 
         ConfigurationSnapshot configuration = configurationClient.get(run.getConfigurationId());
 
-        // A retry gets only successful results from predecessor algorithms.
-        // The failed result of the retried algorithm itself must not be propagated.
+        // Ein Retry erhält nur erfolgreiche Ergebnisse der Vorgänger-Algorithmen.
+        // Das fehlgeschlagene Ergebnis des wiederholten Algorithmus selbst darf nicht weitergegeben werden.
         List<PreviousResult> previousResults = run.getExecutions().stream()
                 .filter(item -> item.getResult() != null)
                 .filter(item -> item.getAlgorithm().ordinal() < algorithm.ordinal())
@@ -103,6 +123,7 @@ public class AnalysisApplicationService {
                     algorithm,
                     new AnalysisCommand(run.getAnalysisId(), configuration, previousResults));
         } catch (RuntimeException exception) {
+            // Start fehlgeschlagen: Algorithmus als FAILED markieren
             execution = run.execution(algorithm);
             execution.updateStatus(AnalysisStatus.FAILED, algorithm + " service unavailable");
             run.recalculateOverallResult();
@@ -112,6 +133,9 @@ public class AnalysisApplicationService {
         return run;
     }
 
+    /**
+     * Lädt einen Analyse-Lauf oder wirft 404, wenn er nicht existiert.
+     */
     private AnalysisRun find(String analysisId) {
         return repository.findById(analysisId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Analysis not found"));

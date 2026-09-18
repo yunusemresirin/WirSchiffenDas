@@ -4,6 +4,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Engine-Konfiguration mit den Eingabewerten für die Analyse-Kette.
+ */
 @Entity
 @Table(name = "engine_configurations")
 public class EngineConfiguration {

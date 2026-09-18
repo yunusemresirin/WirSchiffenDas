@@ -4,6 +4,9 @@ import de.hbrs.seka.wirschiffendas.fluid.application.AnalysisWorker;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Interner Endpunkt, über den der Analysis-Management-Service die Fluid-Analyse startet.
+ */
 @RestController
 @RequestMapping("/internal/analyses")
 public class AnalysisController {
@@ -14,9 +17,12 @@ public class AnalysisController {
         this.worker = worker;
     }
 
+    /**
+     * Nimmt einen Analyseauftrag an und startet die asynchrone Verarbeitung.
+     */
     @PostMapping
     public ResponseEntity<Void> start(@RequestBody AnalysisCommand command) {
         worker.execute(command);
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.accepted().build(); // 202 Accepted: Verarbeitung läuft asynchron
     }
 }
