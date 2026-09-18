@@ -1,0 +1,221 @@
+% ===========================================================================
+% 03 - Technische Anforderungen (TA) im Code
+% ===========================================================================
+
+% --- TA-01 -----------------------------------------------------------------
+\begin{frame}[fragile]{TA-01 -- Spring Boot}
+  \tabadge{TA-01}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \begin{lstlisting}[style=java]
+@EnableAsync
+@SpringBootApplication
+public class FluidAnalysisServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(
+            FluidAnalysisServiceApplication.class, args);
+    }
+}
+      \end{lstlisting}
+      \srcfile{services/fluid-analysis-service/.../FluidAnalysisServiceApplication.java}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item \code{@SpringBootApplication} aktiviert Auto-Configuration, Component Scan und die eingebettete Servlet-Engine.
+        \item \code{@EnableAsync} ist die Grundlage für die asynchrone Ausführung (QR-08).
+        \item Identisches Muster in allen sechs Services.
+      \end{itemize}
+      \vspace{0.2cm}
+      \begin{block}{Abhängigkeit}
+        \small \code{pom.xml}: \code{spring-boot-starter-web}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- TA-02 -----------------------------------------------------------------
+\begin{frame}[fragile]{TA-02 -- Docker (Container pro Service)}
+  \tabadge{TA-02}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.54\textwidth}
+      \begin{lstlisting}[style=docker]
+FROM maven:3.9.16-eclipse-temurin-21 AS build
+WORKDIR /workspace
+COPY pom.xml ./
+COPY services ./services
+RUN mvn -q -pl services/fluid-analysis-service \
+    -am clean package -DskipTests
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /workspace/services/fluid-analysis-service/target/fluid-analysis-service-0.1.0-SNAPSHOT.jar app.jar
+EXPOSE 8083
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+      \end{lstlisting}
+      \srcfile{services/fluid-analysis-service/Dockerfile}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item \textbf{Multi-Stage-Build}: Build-Umgebung (Maven + JDK) getrennt vom schlanken Runtime-Image (nur JRE).
+        \item Jeder Service erhält ein eigenes Image und einen eigenen Port.
+        \item Grundlage für Independent Deployability (QR-03, ADR-05).
+      \end{itemize}
+      \vspace{0.2cm}
+      \begin{block}{Nachweis}
+        \small 6 $\times$ \code{Dockerfile} -- eines pro Service.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- TA-03 -----------------------------------------------------------------
+\begin{frame}[fragile,shrink=5]{TA-03 -- Docker Compose}
+  \tabadge{TA-03}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.54\textwidth}
+      \begin{lstlisting}[style=yaml]
+services:
+  configuration-service:
+    image: ysirin2s/seka-wirschaffendas:configuration-service-v${VERSION}
+    ports:
+      - "8081:8081"
+    volumes:
+      - configuration-data:/app/data
+  analysis-management-service:
+    image: ysirin2s/seka-wirschaffendas:analysis-management-service-v${VERSION}
+    ports:
+      - "8082:8082"
+    environment:
+      CONFIGURATION_SERVICE_URL: http://configuration-service:8081
+      FLUID_ANALYSIS_SERVICE_URL: http://fluid-analysis-service:8083
+    volumes:
+      - analysis-data:/app/data
+      \end{lstlisting}
+      \srcfile{docker-compose.yml}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item Compose definiert alle sechs Services, Ports, Umgebungsvariablen und getrennte Volumes.
+        \item Services finden sich über \textbf{Service-Namen} im Netzwerk \code{wirschaffendas-network} -- keine fest verdrahteten IPs.
+        \item \code{depends_on} steuert die Startreihenfolge.
+      \end{itemize}
+      \begin{block}{Start}
+        \small \code{docker compose up --build}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- TA-04 -----------------------------------------------------------------
+\begin{frame}[fragile,shrink=3]{TA-04 -- Resilience4j: Circuit Breaker}
+  \tabadge{TA-04}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.56\textwidth}
+      \begin{lstlisting}[style=java]
+@CircuitBreaker(name = "nextService", fallbackMethod = "fallback")
+public void startNext(AnalysisCommand command, String currentResult) {
+    var results = new ArrayList<>(command.previousResults());
+    results.add(Map.of("algorithm", "FLUID", "result", currentResult));
+    AnalysisCommand nextCommand = new AnalysisCommand(
+        command.analysisId(), command.configuration(), results);
+    client.post().uri("/internal/analyses")
+        .body(nextCommand).retrieve().toBodilessEntity();
+}
+private void fallback(AnalysisCommand command,
+                      String currentResult, Throwable throwable) {
+    managementClient.reportStatus(command.analysisId(), "THERMAL",
+        "FAILED", "thermal-analysis-service unavailable");
+}
+      \end{lstlisting}
+      \srcfile{services/fluid-analysis-service/.../infrastructure/NextServiceClient.java}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item Der Breaker fängt Verbindungsfehler ab.
+        \item Statt Fehlerkaskade läuft der \textbf{Fallback}: markiert den Schritt als \code{FAILED}.
+        \item Der aufrufende Service bleibt erreichbar.
+        \item Nach Wartezeit $\rightarrow$ Half-Open $\rightarrow$ Retry möglich.
+      \end{itemize}
+      \begin{block}{Wirkung}
+        \small Isolation of Failures -- der Fehler bleibt lokal (ADR-04).
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{TA-04 -- Circuit Breaker: Konfiguration}
+  \tabadge{TA-04}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{lstlisting}[style=yaml]
+resilience4j:
+  circuitbreaker:
+    instances:
+      nextService:
+        sliding-window-size: 2
+        minimum-number-of-calls: 1
+        permitted-number-of-calls-in-half-open-state: 1
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        automatic-transition-from-open-to-half-open-enabled: true
+      \end{lstlisting}
+      \srcfile{services/fluid-analysis-service/src/main/resources/application.yml}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Zustandsmodell}
+      \begin{center}
+      \begin{tikzpicture}[
+        node distance=7mm,
+        every node/.style={font=\scriptsize},
+        st/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=19mm,minimum height=6mm,align=center},
+        op/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=19mm,minimum height=6mm,align=center}
+      ]
+      \node[st] (c) {Closed};
+      \node[op,right=of c] (o) {Open};
+      \node[st,right=of o] (h) {Half-Open};
+      \draw[-{Latex},thick] (c) -- node[above]{Fehler} (o);
+      \draw[-{Latex},thick] (o) -- node[above]{10s} (h);
+      \draw[-{Latex},thick] (h) to[bend left=35] node[below]{Erfolg} (c);
+      \end{tikzpicture}
+      \end{center}
+
+      \begin{block}{Health-Endpoint}
+        \small \code{/actuator/health} zeigt den Breaker-Zustand.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- TA-05 -----------------------------------------------------------------
+\begin{frame}{TA-05 -- Apache Kafka (bewusst nicht umgesetzt)}
+  \tabadge{TA-05}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \textbf{Anforderung}
+      \begin{itemize}
+        \item Priorität \textbf{COULD} -- nicht Teil des Pflichtumfangs.
+        \item Kafka könnte Statusnachrichten asynchron übertragen.
+      \end{itemize}
+
+      \vspace{0.3cm}
+      \textbf{Entscheidung}
+      \begin{itemize}
+        \item Kein Kafka im Code.
+        \item Statusmeldungen laufen synchron per REST-Callback (FR-09).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{block}{Begründung (ADR-02)}
+        \small Für den kleinen PoC ist REST einfach nachvollziehbar, testbar und mit der Aufgabenstellung kompatibel. Kafka bleibt bewusst außerhalb des Kernumfangs.
+      \end{block}
+      \vspace{0.2cm}
+      \begin{block}{Trade-off}
+        \small REST erzeugt temporale Kopplung. Für eine produktive Variante wäre asynchrones Messaging zu prüfen.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}

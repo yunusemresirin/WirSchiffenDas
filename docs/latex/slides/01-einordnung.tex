@@ -1,0 +1,100 @@
+% ===========================================================================
+% 01 - Einordnung: Agenda, Ziel und Traceability-Ansatz
+% ===========================================================================
+
+\begin{frame}{Agenda}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \textbf{Teil 1 -- Einordnung}
+      \begin{itemize}
+        \item Ziel der Präsentation
+        \item Traceability-Ansatz
+      \end{itemize}
+      \vspace{0.4cm}
+      \textbf{Teil 2 -- Architektur}
+      \begin{itemize}
+        \item Service-Landschaft
+        \item Choreographie
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Teil 3 -- Technische Anforderungen}
+      \begin{itemize}
+        \item TA-01 bis TA-05 im Code
+      \end{itemize}
+      \vspace{0.4cm}
+      \textbf{Teil 4 -- Architekturentscheidungen}
+      \begin{itemize}
+        \item ADR-01 bis ADR-06 im Code
+      \end{itemize}
+      \vspace{0.4cm}
+      \textbf{Teil 5 -- Demo \& Fazit}
+    \end{column}
+  \end{columns}
+
+  \vfill
+  \begin{block}{Leitfrage}
+    \small Welche Anforderung ist \textbf{wo} im Code nachweisbar -- und
+    \textbf{warum} wurde sie so umgesetzt?
+  \end{block}
+\end{frame}
+
+\begin{frame}{Ziel: Nachweis statt Behauptung}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.54\textwidth}
+      \textbf{Problem}
+      \begin{itemize}
+        \item Architekturdokumente beschreiben Anforderungen.
+        \item Ohne Code-Bezug bleibt offen, ob sie umgesetzt sind.
+      \end{itemize}
+
+      \vspace{0.3cm}
+      \textbf{Lösung: Traceability}
+      \begin{itemize}
+        \item Jede Anforderung $\rightarrow$ konkrete Datei + Symbol.
+        \item Jedes Snippet $\rightarrow$ kurze Erläuterung.
+        \item Nachvollziehbar in der mündlichen Prüfung.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{block}{Kennungen}
+        \small
+        \begin{tabular}{@{}ll@{}}
+          \tabadge{TA-xx} & Technische Anforderung \\
+          \adrbadge{ADR-xx} & Entwurfsentscheidung \\
+          \frbadge{FR-xx} & Funktionale Anforderung \\
+          \qrbadge{QR-xx} & Qualitätsanforderung \\
+        \end{tabular}
+      \end{block}
+      \vspace{0.2cm}
+      \begin{block}{Quelle}
+        \small \code{docs/code-traceability.md}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Traceability-Matrix (Auszug)}
+  \small
+  \begin{tabularx}{\textwidth}{L{1.6cm}L{4.6cm}Y}
+    \toprule
+    \textbf{Kennung} & \textbf{Anforderung} & \textbf{Zentraler Code-Nachweis} \\
+    \midrule
+    TA-01 & Spring Boot & \code{@SpringBootApplication} in 6 Service-Klassen \\
+    TA-02 & Docker & 6 $\times$ \code{Dockerfile} (Multi-Stage) \\
+    TA-03 & Docker Compose & \code{docker-compose.yml} (6 Services, Volumes) \\
+    TA-04 & Resilience4j & \code{@CircuitBreaker} + \code{fallback} + \code{application.yml} \\
+    TA-05 & Kafka (COULD) & bewusst nicht umgesetzt (ADR-02) \\
+    \midrule
+    ADR-01 & Fachlicher Schnitt & Modulstruktur \code{api/application/domain/infrastructure} \\
+    ADR-03 & Choreographie & \code{AnalysisWorker} $\rightarrow$ \code{NextServiceClient} \\
+    ADR-06 & Keine Shared Persistence & \code{ConfigurationSnapshot} + stateless Services \\
+    \bottomrule
+  \end{tabularx}
+
+  \vfill
+  \begin{center}
+    \small\color{codegray}
+    Vollständige Matrix: \code{docs/code-traceability.md}
+  \end{center}
+\end{frame}

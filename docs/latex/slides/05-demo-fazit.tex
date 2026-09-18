@@ -1,0 +1,172 @@
+% ===========================================================================
+% 05 - Live-Demo, FR/QR-Nachweise und Fazit
+% ===========================================================================
+
+\begin{frame}[fragile]{Live-Demo -- Circuit Breaker und Retry}
+  \frbadge{FR-10/11}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \textbf{Ablauf der Demo}
+      \begin{enumerate}
+        \item System starten:
+          \begin{lstlisting}[style=bash]
+docker compose up --build
+          \end{lstlisting}
+        \item Thermal stoppen:
+          \begin{lstlisting}[style=bash]
+docker compose stop thermal-analysis-service
+          \end{lstlisting}
+        \item Analyse starten $\rightarrow$ \code{THERMAL = FAILED}.
+        \item Thermal starten:
+          \begin{lstlisting}[style=bash]
+docker compose start thermal-analysis-service
+          \end{lstlisting}
+        \item Retry ausführen $\rightarrow$ \code{overallResult = OK}.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Retry-Endpoint}
+      \begin{lstlisting}[style=bash]
+POST /api/analyses/{analysisId}/algorithms/THERMAL/retry
+      \end{lstlisting}
+
+      \vspace{0.1cm}
+      \textbf{Was die Demo zeigt}
+      \begin{itemize}
+        \item \textbf{TA-04 / ADR-04}: Circuit Breaker fängt den Ausfall ab.
+        \item \textbf{FR-11}: System bleibt erreichbar, Schritt wird \code{FAILED}.
+        \item \textbf{FR-10}: Nur der fehlgeschlagene Schritt wird wiederholt.
+        \item \textbf{ADR-03}: Choreographie läuft ab Thermal weiter.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{FR-07 -- Gesamtergebnis im Code}
+  \frbadge{FR-07}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.54\textwidth}
+      \begin{lstlisting}[style=java]
+public void recalculateOverallResult() {
+    boolean failed = executions.stream()
+        .anyMatch(e -> e.getStatus() == AnalysisStatus.FAILED
+                    || e.getResult() == AnalysisResult.FAILED);
+
+    if (failed) {
+        overallResult = AnalysisResult.FAILED;
+        return;
+    }
+
+    boolean unfinished = executions.stream()
+        .anyMatch(e -> e.getStatus() == AnalysisStatus.PENDING
+                    || e.getStatus() == AnalysisStatus.RUNNING);
+
+    overallResult = unfinished ? null : AnalysisResult.OK;
+}
+      \end{lstlisting}
+      \srcfile{analysis-management-service/.../domain/AnalysisRun.java}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Regel (architecture.md \S8)}
+      \begin{itemize}
+        \item Ein Fehler $\rightarrow$ \code{FAILED}.
+        \item Schritte offen $\rightarrow$ \code{null}.
+        \item Alle vier fertig $\rightarrow$ \code{OK}.
+      \end{itemize}
+      \vspace{0.2cm}
+      \begin{block}{Test}
+        \small \code{AnalysisRunTest} prüft alle drei Fälle (QR-07).
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{QR-08 -- Responsiveness durch \code{@Async}}
+  \qrbadge{QR-08}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{lstlisting}[style=java]
+@PostMapping
+public ResponseEntity<Void> start(
+        @RequestBody AnalysisCommand command) {
+    worker.execute(command);
+    return ResponseEntity.accepted().build();
+}
+      \end{lstlisting}
+      \srcfile{.../api/AnalysisController.java}
+
+      \vspace{0.1cm}
+      \begin{lstlisting}[style=java]
+@Async
+public void execute(AnalysisCommand command) {
+    // laeuft im Hintergrund-Thread
+}
+      \end{lstlisting}
+      \srcfile{.../application/AnalysisWorker.java}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item Der Controller antwortet sofort mit \code{202 Accepted}.
+        \item \code{worker.execute} läuft dank \code{@Async} im Hintergrund.
+        \item Der Client blockiert nicht bis zum Ende der Analyse.
+        \item Status ist währenddessen weiter abfragbar (QR-02).
+      \end{itemize}
+      \begin{block}{Zusammenspiel}
+        \small \code{@EnableAsync} (TA-01) + \code{@Async} + \code{202 Accepted}.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Fazit -- Anforderungen nachweisbar umgesetzt}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \textbf{Technische Anforderungen}
+      \begin{itemize}
+        \item[\textcolor{okgreen}{\checkmark}] TA-01 Spring Boot
+        \item[\textcolor{okgreen}{\checkmark}] TA-02 Docker
+        \item[\textcolor{okgreen}{\checkmark}] TA-03 Docker Compose
+        \item[\textcolor{okgreen}{\checkmark}] TA-04 Resilience4j
+        \item[\textcolor{codegray}{--}] TA-05 Kafka (COULD, bewusst offen)
+      \end{itemize}
+
+      \vspace{0.3cm}
+      \textbf{Architekturentscheidungen}
+      \begin{itemize}
+        \item[\textcolor{okgreen}{\checkmark}] ADR-01 bis ADR-06 im Code belegt
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Kernbotschaft}
+        \small Jede zentrale Anforderung ist über eine konkrete Datei und ein
+        Symbol im Code nachweisbar -- nicht nur dokumentiert, sondern
+        implementiert und testbar.
+      \end{block}
+
+      \vspace{0.2cm}
+      \begin{block}{Referenzen}
+        \small
+        \code{docs/code-traceability.md}\\
+        \code{docs/arc42.md}\\
+        \code{docs/requirements.md}\\
+        \code{scripts/e2e.sh}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[plain]
+  \begin{center}
+    \hbrslogo
+    \vspace{1.5cm}
+
+    {\Huge\bfseries\color{darkblue} Vielen Dank!}\par
+    \vspace{0.6cm}
+    {\large Fragen und Diskussion}\par
+
+    \vspace{1.5cm}
+    {\large Theodoros Bampis \& Yunus Emre Sirin}\par
+    {\large SEKA -- Sommersemester 2026}\par
+  \end{center}
+\end{frame}

@@ -1,0 +1,267 @@
+% ===========================================================================
+% 04 - Architecture Decision Records (ADR) im Code
+% ===========================================================================
+
+% --- ADR-01 -----------------------------------------------------------------
+\begin{frame}[fragile]{ADR-01 -- Fachlicher Schnitt statt technischer Layer}
+  \adrbadge{ADR-01}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \textbf{Entscheidung}
+      \begin{itemize}
+        \item Services werden nach \textbf{Business Capabilities} geschnitten.
+        \item Kein technischer Layer-Schnitt (kein ``Controller-Service'').
+      \end{itemize}
+
+      \vspace{0.25cm}
+      \textbf{Nachweis: Modulstruktur}
+      \begin{lstlisting}[style=bash]
+services/
+  configuration-service/          -> Engine-Konfiguration
+  analysis-management-service/    -> AnalysisRun, Status, Resultate
+  fluid-analysis-service/         -> Oil-/Fuel-Analyse
+  thermal-analysis-service/       -> thermische Analyse
+  electrical-analysis-service/    -> elektrische Analyse
+  engine-management-analysis-service/ -> EMS-Analyse
+      \end{lstlisting}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Interne Schichtung (je Service)}
+      \begin{lstlisting}[style=bash]
+fluid/
+  api/             AnalysisController, AnalysisCommand
+  application/     AnalysisWorker
+  infrastructure/  NextServiceClient,
+                   AnalysisManagementClient
+  FluidAnalysisServiceApplication.java
+      \end{lstlisting}
+
+      \vspace{0.2cm}
+      \begin{block}{Wirkung}
+        \small Vermeidung des Anti-Patterns \textbf{Wrong Cut} (QR-06).
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- ADR-02 -----------------------------------------------------------------
+\begin{frame}[fragile]{ADR-02 -- REST für die Kommunikation}
+  \adrbadge{ADR-02}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \begin{lstlisting}[style=java]
+@RestController
+@RequestMapping("/internal/analyses")
+public class AnalysisController {
+
+    private final AnalysisWorker worker;
+
+    @PostMapping
+    public ResponseEntity<Void> start(
+            @RequestBody AnalysisCommand command) {
+        worker.execute(command);
+        return ResponseEntity.accepted().build();
+    }
+}
+      \end{lstlisting}
+      \srcfile{services/fluid-analysis-service/.../api/AnalysisController.java}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item Alle Services kommunizieren über HTTP/REST mit definierten DTOs.
+        \item Kein Service greift auf interne Klassen eines anderen zu.
+        \item Ausgehende Aufrufe über \code{RestClient}.
+      \end{itemize}
+      \vspace{0.2cm}
+      \begin{block}{Nachweis}
+        \small \code{*Controller} (eingehend) + \code{RestClient}-Clients (ausgehend) in jedem Service.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- ADR-03 -----------------------------------------------------------------
+\begin{frame}[fragile]{ADR-03 -- Choreographie statt Orchestration}
+  \adrbadge{ADR-03}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.54\textwidth}
+      \textbf{Start nur des Anchor-Algorithmus}
+      \begin{lstlisting}[style=java]
+public AnalysisRun start(String configurationId) {
+    ConfigurationSnapshot configuration =
+        configurationClient.get(configurationId);
+    AnalysisRun run = AnalysisRun.start(
+        "A-" + UUID.randomUUID(), configurationId);
+    AlgorithmExecution fluid = run.execution(AlgorithmName.FLUID);
+    fluid.updateStatus(AnalysisStatus.RUNNING, null);
+
+    // Commit before external HTTP call (avoids callback race).
+    run = repository.saveAndFlush(run);
+
+    serviceStarter.start(AlgorithmName.FLUID,
+        new AnalysisCommand(run.getAnalysisId(),
+                            configuration, List.of()));
+    return run;
+}
+      \end{lstlisting}
+      \srcfile{.../application/AnalysisApplicationService.java}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Weitergabe durch den Service}
+      \begin{lstlisting}[style=java]
+@Async
+public void execute(AnalysisCommand command) {
+    managementClient.reportStatus(
+        command.analysisId(), ALGORITHM, "RUNNING", null);
+    if (!pause(command.analysisId())) return;
+
+    boolean ok = valid(command.configuration()
+                       .get("oilSystem"))
+              && valid(command.configuration()
+                       .get("fuelSystem"));
+    String result = ok ? "OK" : "FAILED";
+    managementClient.reportResult(command.analysisId(),
+        ALGORITHM, ok ? "READY" : "FAILED", result, null);
+
+    if (ok) {
+        nextServiceClient.startNext(command, result);
+    }
+}
+      \end{lstlisting}
+      \srcfile{.../application/AnalysisWorker.java}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- ADR-04 -----------------------------------------------------------------
+\begin{frame}[fragile,shrink=5]{ADR-04 -- Circuit Breaker mit Resilience4j}
+  \adrbadge{ADR-04}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.54\textwidth}
+      \begin{lstlisting}[style=java]
+@CircuitBreaker(name = "analysisServiceStarter")
+public void start(AlgorithmName algorithm,
+                  AnalysisCommand command) {
+    String baseUrl = switch (algorithm) {
+        case FLUID -> fluidUrl;
+        case THERMAL -> thermalUrl;
+        case ELECTRICAL -> electricalUrl;
+        case ENGINE_MANAGEMENT -> engineManagementUrl;
+    };
+
+    builder.baseUrl(baseUrl).build()
+            .post().uri("/internal/analyses")
+            .body(command).retrieve().toBodilessEntity();
+}
+      \end{lstlisting}
+      \srcfile{.../infrastructure/AnalysisServiceStarter.java}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Erläuterung}
+      \begin{itemize}
+        \item Umsetzung von \textbf{Isolation of Failures}.
+        \item Der Fehler bleibt lokal im aufrufenden Service behandelbar.
+        \item Zwei Breaker-Instanzen:
+          \begin{itemize}
+            \item \code{analysisServiceStarter} (Management $\rightarrow$ Analyse)
+            \item \code{nextService} (Analyse $\rightarrow$ nächster Service)
+          \end{itemize}
+      \end{itemize}
+      \begin{block}{Detail}
+        \small Vollständiger Code + Fallback: siehe TA-04.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- ADR-05 -----------------------------------------------------------------
+\begin{frame}{ADR-05 -- Container pro Microservice}
+  \adrbadge{ADR-05}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \textbf{Entscheidung}
+      \begin{itemize}
+        \item Jeder Service besitzt ein eigenes \code{Dockerfile}.
+        \item Jeder Service läuft in einem eigenen Container.
+      \end{itemize}
+
+      \vspace{0.2cm}
+      \textbf{Nachweis}
+      \begin{itemize}
+        \item 6 $\times$ \code{Dockerfile} (Multi-Stage).
+        \item \code{docker-compose.yml} mit 6 Services und Ports 8081--8086.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{center}
+      \begin{tikzpicture}[
+        every node/.style={font=\scriptsize},
+        box/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=42mm,minimum height=6mm,align=center}
+      ]
+      \node[box] (a) {configuration-service :8081};
+      \node[box,below=1.5mm of a] (b) {analysis-management :8082};
+      \node[box,below=1.5mm of b] (c) {fluid-analysis :8083};
+      \node[box,below=1.5mm of c] (d) {thermal-analysis :8084};
+      \node[box,below=1.5mm of d] (e) {electrical-analysis :8085};
+      \node[box,below=1.5mm of e] (f) {engine-management :8086};
+      \end{tikzpicture}
+      \end{center}
+
+      \vspace{0.1cm}
+      \begin{block}{Wirkung}
+        \small Unterstützt Independent Deployability (QR-03).
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- ADR-06 -----------------------------------------------------------------
+\begin{frame}[fragile,shrink=3]{ADR-06 -- Keine Shared Persistence}
+  \adrbadge{ADR-06}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \textbf{Getrennte Entities}
+      \begin{lstlisting}[style=java]
+@Entity
+@Table(name = "engine_configurations")
+public class EngineConfiguration {
+    @Id
+    private String configurationId;
+    private String oilSystem;
+    private String fuelSystem;
+    // ...
+}
+      \end{lstlisting}
+      \srcfile{configuration-service/.../domain/EngineConfiguration.java}
+
+      \begin{lstlisting}[style=java]
+@Entity
+@Table(name = "analysis_runs")
+public class AnalysisRun {
+    @Id
+    private String analysisId;
+    // ...
+}
+      \end{lstlisting}
+      \srcfile{analysis-management-service/.../domain/AnalysisRun.java}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Integration über DTO}
+      \begin{lstlisting}[style=java]
+public record ConfigurationSnapshot(
+        String configurationId,
+        String oilSystem,
+        String fuelSystem,
+        String coolingSystem,
+        String electricalSystem,
+        String engineManagementSystem) {
+}
+      \end{lstlisting}
+      \srcfile{.../infrastructure/ConfigurationSnapshot.java}
+      \begin{block}{Nachweis stateless}
+        \small Analyse-Services haben \textbf{keinen} \code{spring.datasource}-Block in \code{application.yml}.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
