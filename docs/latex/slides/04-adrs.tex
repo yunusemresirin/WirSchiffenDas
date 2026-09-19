@@ -135,7 +135,7 @@ public void execute(AnalysisCommand command) {
 \end{frame}
 
 % --- ADR-04 -----------------------------------------------------------------
-\begin{frame}[fragile,shrink=5]{ADR-04 -- Circuit Breaker mit Resilience4j}
+\begin{frame}[fragile]{ADR-04 -- Circuit Breaker mit Resilience4j}
   \adrbadge{ADR-04}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.54\textwidth}
@@ -194,6 +194,7 @@ public void start(AlgorithmName algorithm,
       \end{itemize}
     \end{column}
     \begin{column}{0.46\textwidth}
+      \vspace*{-0.75cm}
       \begin{center}
       \begin{tikzpicture}[
         every node/.style={font=\scriptsize},
@@ -208,7 +209,7 @@ public void start(AlgorithmName algorithm,
       \end{tikzpicture}
       \end{center}
 
-      \vspace{0.1cm}
+      \vspace{-0.2cm}
       \begin{block}{Wirkung}
         \small Unterstützt Independent Deployability (QR-03).
       \end{block}
@@ -217,7 +218,7 @@ public void start(AlgorithmName algorithm,
 \end{frame}
 
 % --- ADR-06 -----------------------------------------------------------------
-\begin{frame}[fragile,shrink=3]{ADR-06 -- Keine Shared Persistence}
+\begin{frame}[fragile]{ADR-06 -- Keine Shared Persistence}
   \adrbadge{ADR-06}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.5\textwidth}
