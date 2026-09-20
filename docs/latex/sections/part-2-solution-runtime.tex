@@ -46,29 +46,53 @@ Die Architektur besteht aus einem Frontend und sechs Spring-Boot-Microservices. 
 \vfill
 \begin{center}
 \begin{tikzpicture}[
-  node distance=9mm and 20mm,
   every node/.style={font=\small},
-  svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=55mm,minimum height=10mm,align=center},
-  data/.style={draw,ellipse,fill=lightgray,minimum width=43mm,minimum height=9mm,align=center},
-  ana/.style={draw=darkblue,rounded corners,fill=white,minimum width=55mm,minimum height=10mm,align=center}
+  svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=44mm,minimum height=9mm,align=center},
+  data/.style={draw,ellipse,fill=lightgray,minimum width=36mm,minimum height=8mm,align=center},
+  ana/.style={draw=darkblue,rounded corners,fill=white,minimum width=44mm,minimum height=9mm,align=center},
+  port/.style={draw=darkblue,fill=white,minimum width=2mm,minimum height=2mm,inner sep=0pt},
+  plabel/.style={font=\scriptsize,text=codegray}
 ]
-\node[svc] (ui) at (0,0) {React/MUI Frontend};
-\node[svc] (cfg) at (-4.0,-1.7) {Configuration Service};
-\node[svc] (am) at (4.0,-1.7) {Analysis Management Service};
-\node[data] (cfgdb) at (-4.0,-3.1) {Configuration DB};
-\node[data] (amdb) at (0.8,-3.1) {Analysis DB};
-\node[ana] (fluid) at (4.0,-5.0) {Fluid Analysis};
-\node[ana] (thermal) at (4.0,-6.4) {Thermal Analysis};
-\node[ana] (electrical) at (4.0,-7.8) {Electrical Analysis};
-\node[ana] (ems) at (4.0,-9.2) {Engine Management Analysis};
-\draw[-{Latex},thick] (ui) -- (cfg);
-\draw[-{Latex},thick] (ui) -- (am);
-\draw[-{Latex}] (cfg) -- (cfgdb);
-\draw[-{Latex}] (am) -- (amdb);
-\draw[-{Latex},thick] (am) -- node[right,pos=0.55]{Start} (fluid);
-\draw[-{Latex},thick] (fluid) -- (thermal);
-\draw[-{Latex},thick] (thermal) -- (electrical);
-\draw[-{Latex},thick] (electrical) -- (ems);
+\node[svc,fill=hbrsblue!15] (ui) at (0,0) {React/MUI Frontend};
+\node[svc] (cfg) at (-3.4,-2.2) {Configuration Service};
+\node[svc] (am) at (3.4,-2.2) {Analysis Management};
+\node[data] (cfgdb) at (-3.4,-4.2) {Configuration DB};
+\node[data] (amdb) at (1.2,-4.2) {Analysis DB};
+\node[ana] (fluid) at (5.8,-4.2) {Fluid Analysis};
+\node[ana] (thermal) at (5.8,-6.2) {Thermal Analysis};
+\node[ana] (electrical) at (5.8,-8.2) {Electrical Analysis};
+\node[ana] (ems) at (5.8,-10.2) {Engine Management};
+
+% Ports
+\node[port] (pcfg) at (cfg.north) {};
+\node[port] (pam) at (am.north) {};
+\node[port] (pfluid) at (fluid.north) {};
+\node[port] (pthermal) at (thermal.north) {};
+\node[port] (pelec) at (electrical.north) {};
+\node[port] (pems) at (ems.north) {};
+
+% Port numbers (in free space beside each service)
+\node[plabel,right=2mm of ui.east] {:8000};
+\node[plabel,right=2mm of cfg.east] {:8081};
+\node[plabel,right=2mm of am.east] {:8082};
+\node[plabel,right=2mm of fluid.east] {:8083};
+\node[plabel,right=2mm of thermal.east] {:8084};
+\node[plabel,right=2mm of electrical.east] {:8085};
+\node[plabel,right=2mm of ems.east] {:8086};
+
+% Labels
+\node[plabel,below=2mm of cfgdb.south] {H2-Datenbank};
+\node[plabel,below=2mm of amdb.south] {H2-Datenbank};
+
+% Connections
+\draw[-{Latex},thick] (ui) to[out=-135,in=90] (pcfg);
+\draw[-{Latex},thick] (ui) to[out=-45,in=90] (pam);
+\draw[-{Latex}] (cfg) -- (cfgdb.north);
+\draw[-{Latex}] (am) to[out=-135,in=90] (amdb);
+\draw[-{Latex},thick] (am.south) to[out=-45,in=90] node[right,pos=0.95]{Start} (pfluid);
+\draw[-{Latex},thick] (fluid.south) -- (pthermal);
+\draw[-{Latex},thick] (thermal.south) -- (pelec);
+\draw[-{Latex},thick] (electrical.south) -- (pems);
 \end{tikzpicture}
 \end{center}
 \vfill
