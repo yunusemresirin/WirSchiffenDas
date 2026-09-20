@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect width="100%" height="100%" fill="white"/>
+<text x="70" y="81.16" font-family="Arial, sans-serif" font-size="38" font-weight="700" text-anchor="start">Kontextsicht</text>
+<text x="70" y="122.68" font-family="Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start">WirSchiffenDas · Qualitätsanalyse von Motorkonfigurationen</text>
+<circle cx="190" cy="342" r="25" fill="white" stroke="black" stroke-width="2"/>
+<polyline points="190,367 190,451" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="142,395 238,395" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="190,451 149,502" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="190,451 231,502" fill="none" stroke="black" stroke-width="2"/>
+<text x="190" y="549.68" font-family="Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle">Ingenieur / Ingenieurin</text>
+<text x="190" y="583.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="middle">bedient das System</text>
+<rect x="980" y="231" width="205" height="42" fill="white" stroke="black" stroke-width="2"/>
+<text x="996" y="259.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">«system»</text>
+<rect x="980" y="273" width="545" height="365" fill="white" stroke="black" stroke-width="2"/>
+<rect x="982" y="275" width="541" height="361" fill="#eeeeee"/>
+<text x="1252" y="342.88" font-family="Arial, sans-serif" font-size="34" font-weight="700" text-anchor="middle">WirSchiffenDas</text>
+<text x="1252" y="393.86" font-family="Arial, sans-serif" font-size="23" font-weight="400" text-anchor="middle">Motorkonfigurationen verwalten</text>
+<text x="1252" y="438.86" font-family="Arial, sans-serif" font-size="23" font-weight="400" text-anchor="middle">Qualitätsanalysen durchführen</text>
+<text x="1252" y="483.86" font-family="Arial, sans-serif" font-size="23" font-weight="400" text-anchor="middle">Status und Ergebnisse bereitstellen</text>
+<text x="1252" y="528.86" font-family="Arial, sans-serif" font-size="23" font-weight="400" text-anchor="middle">Fehlgeschlagene Schritte wiederholen</text>
+<text x="1252" y="596.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="middle">Das zu betrachtende System</text>
+<text x="615" y="278.86" font-family="Arial, sans-serif" font-size="23" font-weight="700" text-anchor="middle">Eingaben und Aufträge</text>
+<text x="615" y="319.22" font-family="Arial, sans-serif" font-size="21" font-weight="400" text-anchor="middle">Motorkonfiguration · Konfigurations-ID</text>
+<text x="615" y="354.22" font-family="Arial, sans-serif" font-size="21" font-weight="400" text-anchor="middle">Analyse starten · Schritt erneut starten</text>
+<polyline points="285,391 980,391" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="968.12984377594,396.3008858897744 980,391 968.12984377594,385.6991141102256" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="980,495 285,495" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="296.87015622406,489.6991141102256 285,495 296.87015622406,500.3008858897744" fill="none" stroke="black" stroke-width="2"/>
+<text x="615" y="544.86" font-family="Arial, sans-serif" font-size="23" font-weight="700" text-anchor="middle">Rückmeldungen und Ergebnisse</text>
+<text x="615" y="585.22" font-family="Arial, sans-serif" font-size="21" font-weight="400" text-anchor="middle">Konfiguration und IDs · Analysestatus</text>
+<text x="615" y="619.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">Einzelergebnisse · Gesamtergebnis · Servicezustand</text>
+<polyline points="70,713 1525,713" fill="none" stroke="black" stroke-width="2"/>
+<text x="70" y="764.04" font-family="Arial, sans-serif" font-size="22" font-weight="700" text-anchor="start">Systemgrenze</text>
+<text x="70" y="802.22" font-family="Arial, sans-serif" font-size="21" font-weight="400" text-anchor="start">Weboberfläche, Backend-Services und Datenhaltung gehören zum System.</text>
+<text x="70" y="839.22" font-family="Arial, sans-serif" font-size="21" font-weight="400" text-anchor="start">Keine externen fachlichen Systeme angebunden. Bedienung über Browser oder REST-API.</text>
+</svg>

@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1310" viewBox="0 0 1800 1310">
+<rect width="100%" height="100%" fill="white"/>
+<text x="60" y="71.16" font-family="Arial, sans-serif" font-size="38" font-weight="700" text-anchor="start">Verteilungssicht</text>
+<text x="60" y="113.68" font-family="Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start">WirSchiffenDas · Geräte, Laufzeitumgebungen und persistente Daten</text>
+<polygon points="55,225 70,210 350,210 335,225" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="335,225 350,210 350,580 335,595" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="55" y="225" width="280" height="370" fill="white" stroke="black" stroke-width="2"/>
+<text x="73" y="255.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«device»</text>
+<text x="73" y="291.68" font-family="Arial, sans-serif" font-size="24" font-weight="700" text-anchor="start">Client-Gerät</text>
+<polygon points="80,340 95,325 315,325 300,340" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="300,340 315,325 315,545 300,560" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="80" y="340" width="220" height="220" fill="white" stroke="black" stroke-width="2"/>
+<text x="98" y="370.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«executionEnvironment»</text>
+<text x="98" y="404.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="start">Webbrowser</text>
+<rect x="100" y="445" width="180" height="85" fill="white" stroke="black" stroke-width="2"/>
+<text x="112" y="468.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">«component»</text>
+<text x="112" y="488.76" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="start">React SPA</text>
+<polygon points="420,225 435,210 1745,210 1730,225" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1730,225 1745,210 1745,995 1730,1010" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="420" y="225" width="1310" height="785" fill="white" stroke="black" stroke-width="2"/>
+<text x="438" y="255.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«device»</text>
+<text x="438" y="291.68" font-family="Arial, sans-serif" font-size="24" font-weight="700" text-anchor="start">Docker-Host</text>
+<polygon points="455,325 470,310 1705,310 1690,325" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1690,325 1705,310 1705,945 1690,960" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="455" y="325" width="1235" height="635" fill="white" stroke="black" stroke-width="2"/>
+<text x="473" y="355.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«executionEnvironment»</text>
+<text x="473" y="392.5" font-family="Arial, sans-serif" font-size="25" font-weight="700" text-anchor="start">Docker Engine</text>
+<text x="700" y="388.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Docker Compose · Netzwerk: wirschiffendas-network</text>
+<polygon points="480,450 495,435 775,435 760,450" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="760,450 775,435 775,610 760,625" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="480" y="450" width="280" height="175" fill="white" stroke="black" stroke-width="2"/>
+<text x="498" y="480.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="498" y="515.04" font-family="Arial, sans-serif" font-size="22" font-weight="700" text-anchor="start">web-ui</text>
+<text x="498" y="542.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">HTTP :80</text>
+<rect x="495" y="560" width="250" height="52" fill="white" stroke="black" stroke-width="2"/>
+<text x="507" y="583.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">«component»</text>
+<text x="507" y="603.76" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="start">Nginx · Dateien / Proxy</text>
+<polygon points="820,450 835,435 1190,435 1175,450" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1175,450 1190,435 1190,610 1175,625" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="820" y="450" width="355" height="175" fill="white" stroke="black" stroke-width="2"/>
+<text x="838" y="480.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="838" y="514.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="start">configuration-service</text>
+<text x="838" y="542.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">HTTP :8081</text>
+<rect x="835" y="560" width="325" height="52" fill="white" stroke="black" stroke-width="2"/>
+<text x="847" y="583.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">«component»</text>
+<text x="847" y="603.76" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="start">Spring Boot / JVM + H2</text>
+<polygon points="1240,450 1255,435 1675,435 1660,450" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1660,450 1675,435 1675,610 1660,625" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="1240" y="450" width="420" height="175" fill="white" stroke="black" stroke-width="2"/>
+<text x="1258" y="480.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="1258" y="514.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="start">analysis-management-service</text>
+<text x="1258" y="542.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">HTTP :8082</text>
+<rect x="1255" y="560" width="390" height="52" fill="white" stroke="black" stroke-width="2"/>
+<text x="1267" y="583.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">«component»</text>
+<text x="1267" y="603.76" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="start">Spring Boot / JVM + H2</text>
+<rect x="820" y="665" width="355" height="65" fill="white" stroke="black" stroke-width="2"/>
+<text x="834" y="690.58" font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="start">«volume» configuration-data</text>
+<text x="834" y="717.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">H2-Dateien · Mount: /app/data</text>
+<polyline points="997.5,625 997.5,665" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1240" y="665" width="420" height="65" fill="white" stroke="black" stroke-width="2"/>
+<text x="1254" y="690.58" font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="start">«volume» analysis-data</text>
+<text x="1254" y="717.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">H2-Dateien · Mount: /app/data</text>
+<polyline points="1450.0,625 1450.0,665" fill="none" stroke="black" stroke-width="2"/>
+<polygon points="480,805 495,790 755,790 740,805" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="740,805 755,790 755,915 740,930" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="480" y="805" width="260" height="125" fill="white" stroke="black" stroke-width="2"/>
+<text x="498" y="835.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="498" y="868.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">fluid-analysis-</text>
+<text x="498" y="894.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">service</text>
+<text x="498" y="922.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">JVM / Spring Boot · :8083</text>
+<polygon points="790,805 805,790 1065,790 1050,805" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1050,805 1065,790 1065,915 1050,930" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="790" y="805" width="260" height="125" fill="white" stroke="black" stroke-width="2"/>
+<text x="808" y="835.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="808" y="868.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">thermal-analysis-</text>
+<text x="808" y="894.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">service</text>
+<text x="808" y="922.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">JVM / Spring Boot · :8084</text>
+<polygon points="1100,805 1115,790 1375,790 1360,805" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1360,805 1375,790 1375,915 1360,930" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="1100" y="805" width="260" height="125" fill="white" stroke="black" stroke-width="2"/>
+<text x="1118" y="835.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="1118" y="868.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">electrical-analysis-</text>
+<text x="1118" y="894.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">service</text>
+<text x="1118" y="922.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">JVM / Spring Boot · :8085</text>
+<polygon points="1410,805 1425,790 1685,790 1670,805" fill="white" stroke="black" stroke-width="2"/>
+<polygon points="1670,805 1685,790 1685,915 1670,930" fill="#dddddd" stroke="black" stroke-width="2"/>
+<rect x="1410" y="805" width="260" height="125" fill="white" stroke="black" stroke-width="2"/>
+<text x="1428" y="835.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">«container»</text>
+<text x="1428" y="868.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">engine-management-</text>
+<text x="1428" y="894.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="start">analysis-service</text>
+<text x="1428" y="922.12" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start">JVM / Spring Boot · :8086</text>
+<polyline points="350,280 420,280" fill="none" stroke="black" stroke-width="2"/>
+<text x="60" y="165.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Kommunikationspfad: HTTP / TCP</text>
+<text x="60" y="194.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Host :3000 → web-ui :80</text>
+<polyline points="300,487 390,487 390,590 495,590" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="483.12984377594,595.3008858897745 495,590 483.12984377594,584.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<text x="62" y="653.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">React lädt Ressourcen und nutzt</text>
+<text x="62" y="681.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">REST-APIs über Nginx.</text>
+<polyline points="760,505 820,505" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="808.12984377594,510.3008858897744 820,505 808.12984377594,499.6991141102256" fill="none" stroke="black" stroke-width="2"/>
+<text x="788" y="488.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle">1</text>
+<polyline points="650,450 650,420 1450,420 1450,450" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1444.6991141102255,438.12984377594 1450,450 1455.3008858897745,438.12984377594" fill="none" stroke="black" stroke-width="2"/>
+<text x="1020" y="407.76" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">2 · /api/analyses</text>
+<polyline points="1240,505 1190,505" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1201.87015622406,499.6991141102256 1190,505 1201.87015622406,510.3008858897744" fill="none" stroke="black" stroke-width="2"/>
+<text x="1207" y="488.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle">3</text>
+<polyline points="1660,595 1680,595 1680,780 610,780 610,805" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="604.6991141102255,793.12984377594 610,805 615.3008858897745,793.12984377594" fill="none" stroke="black" stroke-width="2"/>
+<text x="1120" y="765.76" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">4 · Analyse starten</text>
+<polyline points="755,858 790,858" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="778.12984377594,863.3008858897745 790,858 778.12984377594,852.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1065,858 1100,858" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1088.12984377594,863.3008858897745 1100,858 1088.12984377594,852.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1375,858 1410,858" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1398.12984377594,863.3008858897745 1410,858 1398.12984377594,852.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<text x="57" y="766.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Client und Docker-Host dürfen</text>
+<text x="57" y="794.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">derselbe Rechner sein.</text>
+<polyline points="60,1053 1745,1053" fill="none" stroke="black" stroke-width="2"/>
+<text x="60" y="1098.86" font-family="Arial, sans-serif" font-size="23" font-weight="700" text-anchor="start">Kommunikation und Datenhaltung</text>
+<text x="60" y="1136.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">1  Nginx → Configuration: /api/configurations</text>
+<text x="60" y="1170.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">2  Nginx → Analysis Management: /api/analyses</text>
+<text x="60" y="1204.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">3  Management → Configuration: Konfiguration laden</text>
+<text x="60" y="1237.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">4  Management → Fluid; dann Fluid → Thermal → Electrical → Engine Management</text>
+<text x="910" y="1135.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">Alle Service-Aufrufe: HTTP / REST über Compose-DNS.</text>
+<text x="910" y="1167.94" font-family="Arial, sans-serif" font-size="17" font-weight="400" text-anchor="start">Callbacks: alle Analyse-Services → Management; Retry: Management → jeweiliger Service.</text>
+<text x="910" y="1203.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">Monitoring: Nginx → alle Backends über /monitor/&lt;service&gt;/…</text>
+<text x="910" y="1237.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">Backend-Ports 8081–8086 zusätzlich 1:1 am Host veröffentlicht.</text>
+<text x="60" y="1286.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Spezifikation: docker-compose.yml · H2 ist eingebettet, kein separater Datenbank-Container.</text>
+</svg>
