@@ -68,7 +68,7 @@ Der PoC verwendet folgende Technologien:
 | Docker Compose | Komposition und lokales Deployment |
 | Postman | manuelle Bedienung und Prüfungsdemo |
 | JUnit 5 / Mockito / AssertJ | automatisierte Tests |
-| PlantUML | Dokumentation der Architektursichten |
+| Python / Matplotlib | Bausteinsicht als PNG und SVG; Generator unter `docs/diagrams/` |
 
 Mit Docker/Docker Compose wird `MS_TA2` umgesetzt. Mit Resilience4j wird zusätzlich die für `MS_TA3` relevante Circuit-Breaker-Lösung realisiert.
 
@@ -185,7 +185,7 @@ Alle vier Analyse-Services melden Status und Resultate proaktiv an `analysis-man
 
 Die vollständige Bausteinsicht liegt unter:
 
-- `docs/diagrams/building-blocks.puml`
+- `docs/diagrams/building-blocks.svg`
 
 ### 5.1 Externe Schnittstellen
 
@@ -459,7 +459,7 @@ Docker Compose erleichtert die reproduzierbare Demonstration und macht Independe
 - `docs/architecture.md` – REST-Verträge und Architekturdetails
 - `docs/architecture-views.md` – Erläuterung des 4-Sichten-Modells
 - `docs/diagrams/context.puml` – Kontextsicht
-- `docs/diagrams/building-blocks.puml` – Bausteinsicht
+- `docs/diagrams/building-blocks.svg` – Bausteinsicht
 - `docs/diagrams/runtime.puml` – Laufzeitsicht
 - `docs/diagrams/deployment.puml` – Verteilungssicht
 - `docs/testing.md` – Teststrategie

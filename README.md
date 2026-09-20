@@ -255,6 +255,6 @@ Erwartetes Endergebnis: alle vier Algorithmen `READY / OK` und `overallResult = 
 - `docs/testing.md` – Teststrategie und E2E-Szenarien
 - `docs/architecture-views.md` – Übersicht des 4-Sichten-Modells
 - `docs/diagrams/context.puml` – Kontextsicht
-- `docs/diagrams/building-blocks.puml` – Bausteinsicht
+- `docs/diagrams/building-blocks.svg` – Bausteinsicht
 - `docs/diagrams/runtime.puml` – Laufzeitsicht
 - `docs/diagrams/deployment.puml` – Verteilungssicht
