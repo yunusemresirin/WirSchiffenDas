@@ -16,7 +16,7 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.85\textwidth]{../diagrams/Verteilungssicht.jpeg}
+  \includegraphics[width=\textwidth]{../diagrams/Verteilungssicht.jpeg}
   \caption{Verteilungssicht: Container, Ports und Docker-Compose-Netzwerk.}
 \end{figure}
 
@@ -29,10 +29,14 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
   \item Zwei Varianten im Repository: veröffentlichte Images und lokaler Build aus dem Source Code.
 \end{itemize}
 
+\newpage
+
 \section{Querschnittliche Konzepte}
 \subsection{Status- und Ergebnismodell}
 
-\vfill
+Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen. Es wird \code{FAILED}, sobald ein relevanter Algorithmus fehlschlägt, und \code{OK}, sobald alle vier Algorithmen erfolgreich abgeschlossen sind.
+
+\vspace{1cm}
 \begin{center}
 \begin{tikzpicture}[
   node distance=12mm,
@@ -49,15 +53,15 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 \draw[-{Latex},thick] (r) -- (f);
 \end{tikzpicture}
 \end{center}
-\vfill
-
-Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen. Es wird \code{FAILED}, sobald ein relevanter Algorithmus fehlschlägt, und \code{OK}, sobald alle vier Algorithmen erfolgreich abgeschlossen sind.
+\vspace{0.5cm}
 
 \subsection{Resilience}
-Resilience4j implementiert den Circuit Breaker für ausgehende Service-Aufrufe \cite{richardson2018patterns}. Das Zustandsmodell folgt \emph{Closed - Open - Half-Open}. Im normalen Zustand werden Aufrufe zugelassen. Nach ausreichenden Fehlern öffnet der Breaker und blockiert weitere Aufrufe. Nach einer Wartezeit werden begrenzte Testaufrufe zugelassen.
+Resilience4j implementiert den Circuit Breaker für ausgehende Aufrufe zwischen Services \cite{richardson2018patterns}. Das Zustandsmodell folgt \emph{Closed -- Open -- Half-Open}. Im normalen Zustand werden Aufrufe zugelassen. Nach ausreichenden Fehlern öffnet der Breaker und blockiert weitere Aufrufe. Nach einer Wartezeit werden begrenzte Testaufrufe zugelassen.
 
 \subsection{Persistenz und Datenhoheit}
 Nur Configuration Management und Analysis Management besitzen langfristigen Zustand. Die Analyse-Services sind bewusst stateless. Damit bleiben fachliche Datenhoheit und Bounded-Context-Grenzen klar erkennbar.
+
+\newpage
 
 \section{Architekturentscheidungen}
 \subsection{ADR-01: Fachlicher Schnitt statt technischer Layer}
@@ -103,7 +107,7 @@ Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.9\textwidth]{../diagrams/Bausteinsicht-monitoring.png}
+  \includegraphics[width=\textwidth]{../diagrams/Bausteinsicht-monitoring.png}
   \caption{Bausteinsicht mit Monitoring-Sicht auf die laufenden Analysen.}
 \end{figure}
 
@@ -114,3 +118,5 @@ Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose
   \item \textbf{Nachvollziehbarkeit:} Zu jeder Analyse-ID sind Status und Resultate aller vier Algorithmen abrufbar.
   \item \textbf{Deployment:} Ein einzelner Analyse-Service kann unabhängig neu gebaut oder neu gestartet werden.
 \end{itemize}
+
+\newpage

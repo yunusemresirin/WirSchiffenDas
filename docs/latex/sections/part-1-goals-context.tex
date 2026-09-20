@@ -58,30 +58,10 @@ Die vier Analyse-Services arbeiten daher mit vereinfachten, deterministischen Pr
 \subsection{Fachlicher Kontext}
 Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt diese Rolle der Demo-Operator. Er erstellt oder lädt eine Motorkonfiguration, startet die Qualitätsanalyse, beobachtet den Bearbeitungsstatus und stö\ss{}t bei Bedarf einen Retry an.
 
-\vfill
-\begin{center}
-\begin{tikzpicture}[
-  node distance=12mm and 30mm,
-  every node/.style={font=\normalsize},
-  actor/.style={draw,rounded corners,fill=lightgray,minimum width=24mm,minimum height=11mm,align=center},
-  system/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=32.5mm,minimum height=12mm,align=center}
-]
-\node[actor] (eng) {Ingenieur};
-\node[system,right=of eng] (ui) {React/MU\\Frontend};
-\node[system,right=of ui] (core) {Engine Quality\\Analysis};
-\draw[-{Latex},thick] (eng) -- node[above]{Bedienung} (ui);
-\draw[-{Latex},thick] (ui) -- node[above]{REST/HTTP} (core);
-\end{tikzpicture}
-\end{center}
-\vfill
-
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.85\textwidth]{../diagrams/Kontextsicht.jpeg}
+  \includegraphics[width=\textwidth]{../diagrams/Kontextsicht.jpeg}
   \caption{Kontextsicht: Akteur, Frontend und Engine Quality Analysis.}
 \end{figure}
-\vfill
 
 Die Systemgrenze umfasst ausschlie\ss{}lich den PoC der Engine Quality Analysis. Externe Unternehmenssysteme und der vollständige Order-Fulfillment-Prozess liegen au\ss{}erhalb dieser Dokumentation.
-
-\newpage

@@ -24,15 +24,28 @@ Configuration Management besitzt die Engine-Konfigurationen. Analysis Management
   node distance=10mm and 25mm,
   every node/.style={font=\small},
   svc/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=52mm,minimum height=10mm,align=center},
-  data/.style={draw,ellipse,fill=lightgray,minimum width=42mm,minimum height=9mm,align=center}
+  data/.style={draw,ellipse,fill=lightgray,minimum width=42mm,minimum height=9mm,align=center},
+  port/.style={draw=darkblue,fill=white,minimum width=2mm,minimum height=2mm,inner sep=0pt},
+  plabel/.style={font=\scriptsize,text=codegray}
 ]
 \node[svc] (cfg) {Configuration Management};
 \node[data,below=of cfg] (cfgdb) {Configuration DB};
 \node[svc,right=of cfg] (am) {Analysis Management};
 \node[data,below=of am] (amdb) {Analysis DB};
+
+% Ports
+\node[port] (pcfg) at (cfg.east) {};
+\node[port] (pam) at (am.west) {};
+
+% Port numbers
+\node[plabel,left=1mm of cfg.west] {:8081};
+\node[plabel,right=1mm of am.east] {:8082};
+
+% Connections
 \draw[-{Latex},thick] (cfg) -- (cfgdb);
 \draw[-{Latex},thick] (am) -- (amdb);
-\draw[-{Latex},dashed] (cfg) -- node[above]{DTO / REST} (am);
+\draw[-{Latex},dashed] (pcfg) -- node[above]{DTO / REST} (pam);
+
 \end{tikzpicture}
 \end{center}
 \vfill
@@ -99,7 +112,7 @@ Die Architektur besteht aus einem Frontend und sechs Spring-Boot-Microservices. 
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.9\textwidth]{../diagrams/Bausteinsicht.png}
+  \includegraphics[width=\textwidth]{../diagrams/Bausteinsicht.png}
   \caption{Bausteinsicht: Frontend, zustandsbehaftete Services und Analyse-Services.}
 \end{figure}
 \vfill
@@ -128,32 +141,23 @@ Jeder Analyse-Service akzeptiert einen Analyseauftrag über \apiendpoint{POST /i
 \subsection{Happy Path}
 Analysis Management erzeugt den \code{AnalysisRun} und startet ausschlie\ss{}lich den Anchor-Algorithmus \emph{Fluid}. Danach gibt jeder erfolgreiche Analyse-Service die Verarbeitung an den fachlich nächsten Service weiter. Dadurch entsteht eine sequenzielle Choreographie. Jeder Schritt meldet seinen Status zusätzlich an Analysis Management zurück.
 
-\vfill
 \begin{center}
 \begin{tikzpicture}[
   node distance=10mm,
   every node/.style={font=\small},
-  stepbox/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=27mm,minimum height=11mm,align=center}
+  stepbox/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=18mm,minimum height=11mm,align=center}
 ]
 \node[stepbox] (am) {Analysis\\Management};
 \node[stepbox,right=of am] (f) {Fluid};
 \node[stepbox,right=of f] (t) {Thermal};
-\node[stepbox,below=of t] (e) {Electrical};
-\node[stepbox,left=of e] (m) {Engine\\Management};
+\node[stepbox,right=of t] (e) {Electrical};
+\node[stepbox,right=of e] (m) {Engine\\Management};
 \draw[-{Latex},thick] (am) -- node[above]{start} (f);
 \draw[-{Latex},thick] (f) -- (t);
 \draw[-{Latex},thick] (t) -- (e);
 \draw[-{Latex},thick] (e) -- (m);
 \end{tikzpicture}
 \end{center}
-\vfill
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.85\textwidth]{../diagrams/Laufzeitsicht.jpeg}
-  \caption{Laufzeitsicht: sequenzielle Choreographie der Analyse-Services.}
-\end{figure}
-\vfill
 
 \begin{enumerate}
   \item Analysis Management legt einen neuen AnalysisRun mit initialen Zuständen an.
@@ -163,6 +167,14 @@ Analysis Management erzeugt den \code{AnalysisRun} und startet ausschlie\ss{}lic
   \item Engine Management bildet den letzten fachlichen Schritt und kann vorherige Ergebnisse berücksichtigen.
   \item Sobald alle vier Algorithmen erfolgreich sind, wird das Overall Result auf \code{OK} gesetzt.
 \end{enumerate}
+
+\vfill
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{../diagrams/Laufzeitsicht.jpeg}
+  \caption{Laufzeitsicht: sequenzielle Choreographie der Analyse-Services.}
+\end{figure}
+\vfill
 
 \subsection{Fehlerfall, Circuit Breaker und Retry}
 Beim Ausfall von Thermal darf der Fehler nicht die gesamte Anwendung blockieren. Der ausgehende Aufruf wird durch Resilience4j geschützt. Der betroffene Schritt wird als fehlgeschlagen markiert und kann später gezielt wiederholt werden.
