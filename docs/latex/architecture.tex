@@ -14,8 +14,20 @@
 \usepackage{makecell}
 \usepackage{xurl}
 \usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{caption}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage[
+  backend=biber,
+  style=authoryear,
+  sorting=nyt,
+  maxcitenames=2,
+  maxbibnames=99,
+  giveninits=true,
+  dashed=false
+]{biblatex}
+\addbibresource{references.bib}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
@@ -115,5 +127,8 @@
 \input{sections/part-2-solution-runtime.tex}
 \input{sections/part-3-deployment-quality.tex}
 \input{sections/part-4-risks-summary.tex}
+
+\newpage
+\printbibliography[heading=bibintoc,title={Literaturverzeichnis}]
 
 \end{document}

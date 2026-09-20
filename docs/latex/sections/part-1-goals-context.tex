@@ -1,6 +1,6 @@
 \section{Einführung und Ziele}
 \subsection{Aufgabenstellung}
-Ausgangspunkt ist die in der Fallstudie beschriebene Analyse-Komponente von \emph{Manufacturing Products}. Mehrere fachlich eigenständige Validierungs- und Simulationsalgorithmen sind dort eng gekoppelt. Lange Laufzeiten einzelner Analysen blockieren dadurch den gesamten Konstruktionsablauf und verschlechtern die Responsiveness der Anwendung.
+Ausgangspunkt ist die in der Fallstudie \cite{fallstudie2026} beschriebene Analyse-Komponente von \emph{Manufacturing Products}. Mehrere fachlich eigenständige Validierungs- und Simulationsalgorithmen sind dort eng gekoppelt. Lange Laufzeiten einzelner Analysen blockieren dadurch den gesamten Konstruktionsablauf und verschlechtern die Responsiveness der Anwendung.
 
 Der Proof-of-Concept zerlegt diesen Bereich in eigenständig deploybare Microservices. Eine Motorkonfiguration wird persistent verwaltet und anschlie\ss{}end durch mehrere fachlich getrennte Analyse-Services geprüft. Status und Resultate jedes Algorithmus sollen sichtbar sein. Ein einzelner fehlgeschlagener Schritt muss gezielt wiederholt werden können, ohne bereits erfolgreiche Schritte erneut auszuführen.
 
@@ -73,6 +73,13 @@ Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt 
 \draw[-{Latex},thick] (ui) -- node[above]{REST/HTTP} (core);
 \end{tikzpicture}
 \end{center}
+\vfill
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{../diagrams/Kontextsicht.jpeg}
+  \caption{Kontextsicht: Akteur, Frontend und Engine Quality Analysis.}
+\end{figure}
 \vfill
 
 Die Systemgrenze umfasst ausschlie\ss{}lich den PoC der Engine Quality Analysis. Externe Unternehmenssysteme und der vollständige Order-Fulfillment-Prozess liegen au\ss{}erhalb dieser Dokumentation.

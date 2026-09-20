@@ -14,6 +14,12 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 \bottomrule
 \end{tabularx}
 
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\textwidth]{../diagrams/Verteilungssicht.jpeg}
+  \caption{Verteilungssicht: Container, Ports und Docker-Compose-Netzwerk.}
+\end{figure}
+
 \subsection{Deployment-Prinzipien}
 \begin{itemize}
   \item Eigener Container pro Microservice.
@@ -48,12 +54,10 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen. Es wird \code{FAILED}, sobald ein relevanter Algorithmus fehlschlägt, und \code{OK}, sobald alle vier Algorithmen erfolgreich abgeschlossen sind.
 
 \subsection{Resilience}
-Resilience4j implementiert den Circuit Breaker für ausgehende Service-Aufrufe. Das Zustandsmodell folgt \emph{Closed - Open - Half-Open}. Im normalen Zustand werden Aufrufe zugelassen. Nach ausreichenden Fehlern öffnet der Breaker und blockiert weitere Aufrufe. Nach einer Wartezeit werden begrenzte Testaufrufe zugelassen.
+Resilience4j implementiert den Circuit Breaker für ausgehende Service-Aufrufe \cite{richardson2018patterns}. Das Zustandsmodell folgt \emph{Closed - Open - Half-Open}. Im normalen Zustand werden Aufrufe zugelassen. Nach ausreichenden Fehlern öffnet der Breaker und blockiert weitere Aufrufe. Nach einer Wartezeit werden begrenzte Testaufrufe zugelassen.
 
 \subsection{Persistenz und Datenhoheit}
 Nur Configuration Management und Analysis Management besitzen langfristigen Zustand. Die Analyse-Services sind bewusst stateless. Damit bleiben fachliche Datenhoheit und Bounded-Context-Grenzen klar erkennbar.
-
-\newpage
 
 \section{Architekturentscheidungen}
 \subsection{ADR-01: Fachlicher Schnitt statt technischer Layer}
@@ -80,6 +84,8 @@ Nur Configuration Management und Analysis Management besitzen langfristigen Zust
 \textbf{Entscheidung:} Configuration Management und Analysis Management besitzen getrennte Daten. Analyse-Services bleiben stateless.\\
 \textbf{Begründung:} Die Kopplung zwischen Bounded Contexts wird reduziert; eine gemeinsame Datenbank wird nicht als Integrationsmechanismus verwendet.
 
+\newpage
+
 \section{Qualitätsanforderungen und Architecture Smells}
 \subsection{Priorisierte Probleme und Gegenma\ss{}nahmen}
 \begin{tabularx}{\textwidth}{L{1.2cm}L{5.0cm}Y}
@@ -94,6 +100,12 @@ Nur Configuration Management und Analysis Management besitzen langfristigen Zust
 \end{tabularx}
 
 Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose-DNS und verbessert \emph{Insufficient Monitoring} durch ein explizites Statusmodell und die UI-Sicht auf laufende Analysen. Für einen produktiven Betrieb bleiben zentralisiertes Logging, verteiltes Tracing, Authentisierung/Autorisierung, API-Versionierung und ein dedizierter Observability-Stack als Ausbaustufen offen.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\textwidth]{../diagrams/Bausteinsicht-monitoring.png}
+  \caption{Bausteinsicht mit Monitoring-Sicht auf die laufenden Analysen.}
+\end{figure}
 
 \subsection{Qualitätsszenarien}
 \begin{itemize}
