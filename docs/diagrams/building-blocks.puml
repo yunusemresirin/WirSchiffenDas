@@ -1,0 +1,161 @@
+@startuml
+' WirSchiffenDas – UML component diagram / arc42 building-block view
+' Branch: docs/latex
+' Source of truth: docker-compose.yml, nginx.conf and Spring REST controllers
+
+title WirSchiffenDas – Bausteinsicht (Whitebox, Ebene 1)
+
+top to bottom direction
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ArrowColor #374151
+skinparam component {
+  BackgroundColor #F8FAFC
+  BorderColor #1F4E79
+  FontColor #111827
+}
+skinparam interface {
+  BackgroundColor white
+  BorderColor #1F4E79
+  FontColor #111827
+}
+skinparam database {
+  BackgroundColor #F3F4F6
+  BorderColor #6B7280
+}
+skinparam note {
+  BackgroundColor #FFF8E7
+  BorderColor #C98B2E
+}
+
+actor "Ingenieur / Postman" as USER
+
+component "WirSchiffenDas\n<<System – Whitebox>>" as SYSTEM {
+
+  component "web-ui\n<<Docker Container>>\nReact + MUI + Nginx" as UI #E8F4FD {
+    portin "HTTP\nhost :3000 -> container :80" as UI_IN
+    portout "REST-/Health-Clients" as UI_OUT
+  }
+
+  component "configuration-service\n<<Docker Container>>\nKonfiguration verwalten" as CFG #EAF4EA {
+    portin "REST\nhost :8081 / intern :8081" as CFG_IN
+    component "Configuration Management" as CFG_APP
+    database "H2\nconfiguration-data" as CFG_DB
+    CFG_IN --> CFG_APP
+    CFG_APP --> CFG_DB
+  }
+
+  component "analysis-management-service\n<<Docker Container>>\nAnalysisRun, Status, Resultate, Retry" as AM #EAF4EA {
+    portin "REST\nhost :8082 / intern :8082" as AM_IN
+    portout "REST-Clients\nzu Config + Analysen" as AM_OUT
+    component "Analysis Management" as AM_APP
+    database "H2\nanalysis-data" as AM_DB
+    AM_IN --> AM_APP
+    AM_APP --> AM_DB
+    AM_APP --> AM_OUT
+  }
+
+  component "fluid-analysis-service\n<<Docker Container>>\nFluid-Analyse (stateless)" as FLUID #FFF4E5 {
+    portin "REST\nhost :8083 / intern :8083" as FLUID_IN
+    portout "Callback + nächster Service" as FLUID_OUT
+  }
+
+  component "thermal-analysis-service\n<<Docker Container>>\nThermal-Analyse (stateless)" as THERMAL #FFF4E5 {
+    portin "REST\nhost :8084 / intern :8084" as THERMAL_IN
+    portout "Callback + nächster Service" as THERMAL_OUT
+  }
+
+  component "electrical-analysis-service\n<<Docker Container>>\nElectrical-Analyse (stateless)" as ELECTRICAL #FFF4E5 {
+    portin "REST\nhost :8085 / intern :8085" as ELECTRICAL_IN
+    portout "Callback + nächster Service" as ELECTRICAL_OUT
+  }
+
+  component "engine-management-analysis-service\n<<Docker Container>>\nFinale EMS-Analyse (stateless)" as ENGINE #FFF4E5 {
+    portin "REST\nhost :8086 / intern :8086" as ENGINE_IN
+    portout "Status-/Result-Callback" as ENGINE_OUT
+  }
+
+  interface "IWebUi\n<<provided>>\nGET /" as I_WEB
+  interface "IConfigurationApi\n<<provided>>\nPOST /api/configurations\nGET /api/configurations/{id}" as I_CFG
+  interface "IAnalysisManagementApi\n<<provided>>\nPOST/GET /api/analyses\nPOST .../retry" as I_AM_PUBLIC
+  interface "IAnalysisCallbackApi\n<<provided>>\nPUT .../status\nPUT .../result" as I_AM_CALLBACK
+  interface "IFluidAnalysisApi\n<<provided>>\nPOST /internal/analyses" as I_FLUID
+  interface "IThermalAnalysisApi\n<<provided>>\nPOST /internal/analyses" as I_THERMAL
+  interface "IElectricalAnalysisApi\n<<provided>>\nPOST /internal/analyses" as I_ELECTRICAL
+  interface "IEngineManagementApi\n<<provided>>\nPOST /internal/analyses" as I_ENGINE
+  interface "IHealthApi\n<<provided by all services>>\nGET /actuator/health" as I_HEALTH
+
+  UI_IN -- I_WEB : <<delegation>>
+  CFG_IN -- I_CFG : <<delegation>>
+  AM_IN -- I_AM_PUBLIC : <<delegation>>
+  AM_IN -- I_AM_CALLBACK : <<delegation>>
+  FLUID_IN -- I_FLUID : <<delegation>>
+  THERMAL_IN -- I_THERMAL : <<delegation>>
+  ELECTRICAL_IN -- I_ELECTRICAL : <<delegation>>
+  ENGINE_IN -- I_ENGINE : <<delegation>>
+
+  CFG_IN -- I_HEALTH
+  AM_IN -- I_HEALTH
+  FLUID_IN -- I_HEALTH
+  THERMAL_IN -- I_HEALTH
+  ELECTRICAL_IN -- I_HEALTH
+  ENGINE_IN -- I_HEALTH
+
+  UI_OUT ..> I_CFG : <<required>>\nintern: configuration-service:8081
+  UI_OUT ..> I_AM_PUBLIC : <<required>>\nintern: analysis-management-service:8082
+  UI_OUT ..> I_HEALTH : <<required>>\n/monitor/* -> service:port
+
+  AM_OUT ..> I_CFG : <<required>>\nintern: configuration-service:8081
+  AM_OUT ..> I_FLUID : <<required>>\nStart/Retry: fluid-analysis-service:8083
+  AM_OUT ..> I_THERMAL : <<required>>\nRetry: thermal-analysis-service:8084
+  AM_OUT ..> I_ELECTRICAL : <<required>>\nRetry: electrical-analysis-service:8085
+  AM_OUT ..> I_ENGINE : <<required>>\nRetry: engine-management-analysis-service:8086
+
+  FLUID_OUT ..> I_AM_CALLBACK : <<required>>\nStatus + Result
+  FLUID_OUT ..> I_THERMAL : <<required>>\nChoreographie, Circuit Breaker
+
+  THERMAL_OUT ..> I_AM_CALLBACK : <<required>>\nStatus + Result
+  THERMAL_OUT ..> I_ELECTRICAL : <<required>>\nChoreographie, Circuit Breaker
+
+  ELECTRICAL_OUT ..> I_AM_CALLBACK : <<required>>\nStatus + Result
+  ELECTRICAL_OUT ..> I_ENGINE : <<required>>\nChoreographie, Circuit Breaker
+
+  ENGINE_OUT ..> I_AM_CALLBACK : <<required>>\nStatus + Result
+
+  UI -[hidden]down- AM
+  CFG -[hidden]right- AM
+  AM -[hidden]right- FLUID
+  FLUID -[hidden]down- THERMAL
+  THERMAL -[hidden]down- ELECTRICAL
+  ELECTRICAL -[hidden]down- ENGINE
+}
+
+USER --> I_WEB : <<required>>\nextern: localhost:3000
+USER --> I_CFG : <<required>>\nextern: localhost:8081
+USER --> I_AM_PUBLIC : <<required>>\nextern: localhost:8082
+
+note right of SYSTEM
+  **Port-Sicht**
+  * extern: Zugriff über den veröffentlichten Host-Port
+  * intern: Zugriff im Docker-Netz `wirschiffendas-network`
+    über DNS `<service-name>:<container-port>`
+  * `:8083` bis `:8086` sind technisch ebenfalls am Host
+    veröffentlicht; `/internal/*` bleibt fachlich intern.
+  * Ein Service besitzt jeweils einen HTTP-Port. Öffentliche API,
+    interne API und Actuator sind Interfaces auf demselben Port.
+end note
+
+legend left
+  |= Verbindung |= Bedeutung |
+  | durchgezogen zur Schnittstelle | Provided Interface wird am Port angeboten |
+  | gestrichelt mit Pfeil | Required Interface wird vom Client benötigt |
+  | <<delegation>> | Port delegiert an die angebotene REST-Schnittstelle |
+  | blau/grün | UI bzw. zustandsbehaftete Management-Services |
+  | orange | zustandslose Analyse-Microservices |
+endlegend
+
+@enduml
