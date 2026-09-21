@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -131,6 +132,37 @@ public class AnalysisApplicationService {
         }
 
         return run;
+    }
+
+    /**
+     * Setzt alle durch einen vorübergehend nicht erreichbaren Service fehlgeschlagenen
+     * Analyse-Läufe an genau diesem Algorithmus automatisch fort.
+     *
+     * Fachliche FAILED-Ergebnisse werden bewusst nicht automatisch wiederholt.
+     */
+    public int resumeRecoverableFailures(AlgorithmName algorithm) {
+        List<String> analysisIds = repository.findAll().stream()
+                .filter(run -> isRecoverableFailure(run.execution(algorithm)))
+                .map(AnalysisRun::getAnalysisId)
+                .toList();
+
+        int resumed = 0;
+        for (String analysisId : analysisIds) {
+            try {
+                retry(analysisId, algorithm);
+                resumed++;
+            } catch (RuntimeException ignored) {
+                // Der Lauf bleibt FAILED und kann beim nächsten Recovery-Zyklus erneut versucht werden.
+            }
+        }
+        return resumed;
+    }
+
+    private boolean isRecoverableFailure(AlgorithmExecution execution) {
+        String message = execution.getMessage();
+        return execution.getStatus() == AnalysisStatus.FAILED
+                && message != null
+                && message.toLowerCase(Locale.ROOT).contains("unavailable");
     }
 
     /**
