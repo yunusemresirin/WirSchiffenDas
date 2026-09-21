@@ -3,7 +3,7 @@ set -euo pipefail
 
 CONFIG_URL="${CONFIG_URL:-http://localhost:8081}"
 ANALYSIS_URL="${ANALYSIS_URL:-http://localhost:8082}"
-TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-40}"
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-60}"
 
 for command in curl jq docker; do
   if ! command -v "$command" >/dev/null 2>&1; then
@@ -117,7 +117,7 @@ fi
 echo "Happy Path erfolgreich: $analysis_id"
 
 echo
-echo "=== E2E-02 Thermal-Ausfall + Retry ==="
+echo "=== E2E-02 Thermal-Ausfall + automatische Circuit-Breaker-Recovery ==="
 docker compose stop thermal-analysis-service >/dev/null
 
 configuration_id="$(create_configuration)"
@@ -134,15 +134,15 @@ echo "Thermal-Ausfall wurde korrekt erkannt."
 docker compose start thermal-analysis-service >/dev/null
 wait_for_health "http://localhost:8084" "thermal-analysis-service"
 
-curl -fsS -X POST "$ANALYSIS_URL/api/analyses/$analysis_id/algorithms/THERMAL/retry" >/dev/null
-retry_body="$(wait_for_overall_result "$analysis_id" "OK")"
+echo "Thermal ist wieder da. Kein manueller Retry: warte auf HALF_OPEN-Probe und automatisches Resume ..."
+recovery_body="$(wait_for_overall_result "$analysis_id" "OK")"
 
-ready_count="$(jq '[.algorithms[] | select(.status == "READY" and .result == "OK")] | length' <<<"$retry_body")"
+ready_count="$(jq '[.algorithms[] | select(.status == "READY" and .result == "OK")] | length' <<<"$recovery_body")"
 if [[ "$ready_count" != "4" ]]; then
-  echo "Nach Retry wurden vier READY/OK Algorithmen erwartet, erhalten: $ready_count" >&2
+  echo "Nach automatischer Recovery wurden vier READY/OK Algorithmen erwartet, erhalten: $ready_count" >&2
   exit 1
 fi
 
-echo "Retry erfolgreich: $analysis_id"
+echo "Automatische Recovery erfolgreich: $analysis_id"
 echo
 echo "Alle End-to-End-Tests erfolgreich."

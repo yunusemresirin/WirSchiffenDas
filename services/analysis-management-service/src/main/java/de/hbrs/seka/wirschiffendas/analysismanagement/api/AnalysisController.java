@@ -50,6 +50,16 @@ public class AnalysisController {
     }
 
     /**
+     * Interner Recovery-Hook: setzt nach erfolgreichem Circuit-Breaker-Probe
+     * alle durch Nichterreichbarkeit fehlgeschlagenen Läufe an diesem Algorithmus fort.
+     */
+    @PostMapping("/internal/analyses/recover/{algorithm}")
+    public ResponseEntity<Void> recover(@PathVariable AlgorithmName algorithm) {
+        service.resumeRecoverableFailures(algorithm);
+        return ResponseEntity.accepted().build();
+    }
+
+    /**
      * Interner Callback: aktualisiert den Status eines Algorithmus.
      */
     @PutMapping("/internal/analyses/{analysisId}/algorithms/{algorithm}/status")
