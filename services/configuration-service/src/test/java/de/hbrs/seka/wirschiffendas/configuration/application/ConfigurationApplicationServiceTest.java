@@ -1,6 +1,7 @@
 package de.hbrs.seka.wirschiffendas.configuration.application;
 
 import de.hbrs.seka.wirschiffendas.configuration.api.CreateConfigurationRequest;
+import de.hbrs.seka.wirschiffendas.configuration.domain.ConfigurationVariant;
 import de.hbrs.seka.wirschiffendas.configuration.domain.EngineConfiguration;
 import de.hbrs.seka.wirschiffendas.configuration.infrastructure.EngineConfigurationRepository;
 import org.junit.jupiter.api.Test;
@@ -29,11 +30,11 @@ class ConfigurationApplicationServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         CreateConfigurationRequest request = new CreateConfigurationRequest(
-                "STANDARD",
-                "PREMIUM",
-                "STANDARD",
-                "PREMIUM",
-                "ADVANCED");
+                ConfigurationVariant.STANDARD,
+                ConfigurationVariant.PREMIUM,
+                ConfigurationVariant.STANDARD,
+                ConfigurationVariant.PREMIUM,
+                ConfigurationVariant.ADVANCED);
 
         EngineConfiguration created = service.create(request);
 
