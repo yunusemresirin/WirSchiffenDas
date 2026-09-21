@@ -459,11 +459,16 @@ export default function App() {
 
   useEffect(() => {
     if (!analysis?.analysisId) return;
-    // Nur pollen, solange mindestens ein Algorithmus noch läuft
-    const hasActiveAlgorithm = analysis.algorithms.some(
-      (item) => item.status === 'PENDING' || item.status === 'RUNNING',
+    // Während eines technischen Ausfalls weiter pollen, damit eine automatische
+    // Circuit-Breaker-Recovery und das anschließende Resume sofort sichtbar werden.
+    const shouldKeepPolling = analysis.algorithms.some(
+      (item) =>
+        item.status === 'PENDING' ||
+        item.status === 'RUNNING' ||
+        (item.status === 'FAILED' &&
+          item.message?.toLowerCase().includes('unavailable')),
     );
-    if (!hasActiveAlgorithm) return;
+    if (!shouldKeepPolling) return;
 
     const interval = window.setInterval(() => void refreshAnalysis(), 1000);
     return () => window.clearInterval(interval);
@@ -709,7 +714,7 @@ export default function App() {
                 </Box>
 
                 <Alert severity="info" icon={<ErrorRoundedIcon />}>
-                  <strong>Demo:</strong> `docker compose stop thermal-analysis-service` → neue Analyse starten. Der Breaker <strong>Fluid → Thermal</strong> öffnet nach dem fehlgeschlagenen Aufruf. Nach der Wartezeit wird <strong>HALF_OPEN</strong> sichtbar. Service wieder starten und den fehlgeschlagenen Algorithmus über den Retry-Button erneut ausführen.
+                  <strong>Demo:</strong> `docker compose stop thermal-analysis-service` → neue Analyse starten. Der Breaker <strong>Fluid → Thermal</strong> öffnet nach dem fehlgeschlagenen Aufruf. Nach der Wartezeit wird <strong>HALF_OPEN</strong> sichtbar. Service wieder starten. Der HALF_OPEN-Probe schließt den Breaker automatisch und der fehlgeschlagene Analyse-Schritt wird ohne Benutzeraktion fortgesetzt.
                 </Alert>
               </Stack>
             </CardContent>
