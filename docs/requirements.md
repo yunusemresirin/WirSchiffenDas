@@ -135,13 +135,23 @@ Das System muss die Konfiguration des Optional Equipments einer
 Diesel Engine erfassen können.
 
 Für den Proof-of-Concept dürfen vereinfachte bzw. simulierte
-Konfigurationswerte verwendet werden.
+Konfigurationswerte verwendet werden. Der Prototyp verwendet dafür die
+kontrollierten Varianten `STANDARD`, `PREMIUM`, `ADVANCED` und den
+bewussten Demonstrationswert `INVALID`.
+
+`INVALID` ist syntaktisch eine erlaubte Konfigurationsvariante und darf
+persistiert werden. Fachlich ist sie jedoch ungültig: Der jeweils zuständige
+Analyse-Service muss den Wert erkennen, den Algorithmus mit `FAILED`
+beenden und darf die Choreographie nicht zum nächsten Analyse-Service
+fortsetzen. Beliebige Werte außerhalb dieses Katalogs werden bereits beim
+Anlegen der Konfiguration abgelehnt.
 
 ### Akzeptanzkriterien
 
-- Eine gültige Konfiguration kann angelegt werden.
+- Eine Konfiguration kann nur mit `STANDARD`, `PREMIUM`, `ADVANCED` oder `INVALID` angelegt werden.
 - Jede Konfiguration erhält eine eindeutige ID.
-- Ungültig formatierte Eingaben werden abgelehnt.
+- Werte außerhalb des definierten Variantenkatalogs werden abgelehnt.
+- `INVALID` bleibt für den Fehlerfall speicherbar und wird erst prozessbedingt in der Analyse als `FAILED` bewertet.
 
 
 ---
