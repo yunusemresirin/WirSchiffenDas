@@ -178,9 +178,9 @@ Das Skript liest die vorhandenen versionierten Service-Tags aus Docker Hub, beh�
 
 Ohne `DOCKERHUB_PAT` funktionieren Build und Push weiterhin vollständig; lediglich die automatische Remote-Bereinigung wird übersprungen.
 
-## Circuit-Breaker- und Retry-Demo über die UI
+## Circuit-Breaker-Recovery-Demo über die UI
 
-Für die prototypische Visualisierung ist der Breaker bewusst so konfiguriert, dass bereits ein fehlgeschlagener geschützter Aufruf den Zustand `OPEN` auslösen kann. Nach 10 Sekunden wechselt er automatisch nach `HALF_OPEN`.
+Für die prototypische Visualisierung ist der Breaker bewusst so konfiguriert, dass bereits ein fehlgeschlagener geschützter Aufruf den Zustand `OPEN` auslösen kann. Nach 10 Sekunden wechselt er automatisch nach `HALF_OPEN`; ein geplanter Liveness-Probe entscheidet anschließend selbstständig über `CLOSED` oder erneut `OPEN`.
 
 Beispiel Thermal-Ausfall:
 
