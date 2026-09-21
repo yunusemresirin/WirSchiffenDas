@@ -108,7 +108,7 @@ Ingenieur
 
 Die vollständige Kontextsicht ist modelliert unter:
 
-- `docs/diagrams/context.puml`
+- `docs/diagrams/Kontextsicht.jpeg`
 
 Damit wird die Systemgrenze bewusst eng um den PoC der Engine Quality Analysis gezogen. Externe Unternehmenssysteme wie SAP oder Oracle CRM sind nicht Bestandteil dieses Prototyps.
 
@@ -185,7 +185,7 @@ Alle vier Analyse-Services melden Status und Resultate proaktiv an `analysis-man
 
 Die vollständige Bausteinsicht liegt unter:
 
-- `docs/diagrams/building-blocks.svg`
+- `docs/diagrams/Bausteinsicht.png`
 
 ### 5.1 Externe Schnittstellen
 
@@ -272,7 +272,7 @@ Nach Neustart von Thermal kann ausschließlich dieser Algorithmus wiederholt wer
 
 Die vollständige Laufzeitsicht mit Happy Path und Fehlerpfad befindet sich unter:
 
-- `docs/diagrams/runtime.puml`
+- `docs/diagrams/Laufzeitsicht.jpeg`
 
 ---
 
@@ -305,7 +305,7 @@ Das Repository enthält zwei Deployment-Varianten:
 
 Die vollständige Verteilungssicht befindet sich unter:
 
-- `docs/diagrams/deployment.puml`
+- `docs/diagrams/Verteilungssicht.jpeg`
 
 ---
 
@@ -458,10 +458,10 @@ Docker Compose erleichtert die reproduzierbare Demonstration und macht Independe
 - `docs/ddd.md` – Strategic DDD und Context Map
 - `docs/architecture.md` – REST-Verträge und Architekturdetails
 - `docs/architecture-views.md` – Erläuterung des 4-Sichten-Modells
-- `docs/diagrams/context.puml` – Kontextsicht
-- `docs/diagrams/building-blocks.svg` – Bausteinsicht
-- `docs/diagrams/runtime.puml` – Laufzeitsicht
-- `docs/diagrams/deployment.puml` – Verteilungssicht
+- `docs/diagrams/Kontextsicht.jpeg` – Kontextsicht
+- `docs/diagrams/Bausteinsicht.png` – Bausteinsicht
+- `docs/diagrams/Laufzeitsicht.jpeg` – Laufzeitsicht
+- `docs/diagrams/Verteilungssicht.jpeg` – Verteilungssicht
 - `docs/testing.md` – Teststrategie
 - `postman/WirSchiffenDas.postman_collection.json` – Prüfungsdemo
 - `scripts/e2e.sh` – automatisierter Systemtest

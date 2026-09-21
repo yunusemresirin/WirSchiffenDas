@@ -1,32 +1,32 @@
 # WirSchiffenDas – 4-Sichten-Modell
 
-Die Architektur wird ergänzend zu `ddd.md` und `architecture.md` in vier kompakten Sichten dokumentiert. Die Diagramme liegen unter `docs/diagrams/`. Die Bausteinsicht wird mit Python/Matplotlib als PNG und SVG erzeugt.
+Die Architektur wird ergänzend zu `ddd.md` und `architecture.md` in vier kompakten Sichten dokumentiert. Die Diagramme liegen unter `docs/diagrams/`. Die aktuellen Sichten liegen als PNG- bzw. JPEG-Abbildungen vor.
 
 ## 1. Kontextsicht
 
-Datei: `docs/diagrams/context.puml`
+Datei: `docs/diagrams/Kontextsicht.jpeg`
 
 Zweck: Zeigt die Systemgrenze und den wichtigsten Akteur. Der Ingenieur nutzt das System zum Anlegen von Konfigurationen, zum Starten einer Analyse, zum Beobachten des Status und zum Retry.
 
 ## 2. Bausteinsicht
 
-Dateien: `docs/diagrams/building-blocks.svg` und `docs/diagrams/building-blocks.png`.
+Datei: `docs/diagrams/Bausteinsicht.png`.
 
-Generator: `python docs/diagrams/generate_building_blocks.py`. Notation, Ports und Reproduktion: [Diagramm-README](diagrams/README.md).
+Ergänzende Monitoring-Abbildung: `docs/diagrams/Bausteinsicht-monitoring.png`.
 
-![Bausteinsicht – Whitebox mit Provided/Required Interfaces](diagrams/building-blocks.png)
+![Bausteinsicht – Whitebox mit Provided/Required Interfaces](diagrams/Bausteinsicht.png)
 
 Zweck: Zeigt die sechs fachlichen Microservices und ihre wesentlichen Beziehungen. Die vier Analyse-Services bilden die choreographierte Analyse-Kette. Configuration und Analysis Management besitzen getrennte Datenhoheit.
 
 ## 3. Laufzeitsicht
 
-Datei: `docs/diagrams/runtime.puml`
+Datei: `docs/diagrams/Laufzeitsicht.jpeg`
 
-Zweck: Zeigt den dynamischen Ablauf einer Analyse. Enthalten sind der Happy Path sowie der relevante Fehlerfall, bei dem Thermal nicht erreichbar ist und später per Retry fortgesetzt wird.
+Zweck: Zeigt den dynamischen Ablauf einer Analyse. Die Abbildung zeigt den Happy Path. Fehlerfall und Retry sind ergänzend im Text der arc42-Dokumentation beschrieben.
 
 ## 4. Verteilungssicht
 
-Datei: `docs/diagrams/deployment.puml`
+Datei: `docs/diagrams/Verteilungssicht.jpeg`
 
 Zweck: Zeigt das Deployment auf einem Docker Host. Jeder Microservice läuft in einem eigenen Container. Configuration und Analysis Management besitzen getrennte persistente Volumes.
 

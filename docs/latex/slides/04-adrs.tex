@@ -189,8 +189,8 @@ public void start(AlgorithmName algorithm,
       \vspace{0.2cm}
       \textbf{Nachweis}
       \begin{itemize}
-        \item 6 $\times$ \code{Dockerfile} (Multi-Stage).
-        \item \code{docker-compose.yml} mit 6 Services und Ports 8081--8086.
+        \item 6 Backend-Dockerfiles + Frontend-Dockerfile.
+        \item \code{docker-compose.yml} mit 7 Containern: Backend 8081--8086, Frontend 3000:80.
       \end{itemize}
     \end{column}
     \begin{column}{0.46\textwidth}
