@@ -15,29 +15,44 @@ public class CircuitBreakerRecoveryProbe {
 
     private final CircuitBreaker circuitBreaker;
     private final RestClient probeClient;
+    private final AnalysisManagementClient managementClient;
+    private volatile boolean recoveryNotificationPending;
 
     public CircuitBreakerRecoveryProbe(
             CircuitBreakerRegistry circuitBreakerRegistry,
             RestClient.Builder builder,
-            @Value("${services.next.url}") String nextUrl) {
+            @Value("${services.next.url}") String nextUrl,
+            AnalysisManagementClient managementClient) {
         this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("nextService");
         this.probeClient = builder.baseUrl(nextUrl).build();
+        this.managementClient = managementClient;
     }
 
     @Scheduled(fixedDelayString = "${circuit-breaker.recovery-probe-interval-ms:2000}")
     public void probeWhenHalfOpen() {
-        if (circuitBreaker.getState() != CircuitBreaker.State.HALF_OPEN) {
-            return;
+        if (circuitBreaker.getState() == CircuitBreaker.State.HALF_OPEN) {
+            try {
+                circuitBreaker.executeRunnable(() ->
+                        probeClient.get()
+                                .uri("/actuator/health/liveness")
+                                .retrieve()
+                                .toBodilessEntity());
+
+                if (circuitBreaker.getState() == CircuitBreaker.State.CLOSED) {
+                    recoveryNotificationPending = true;
+                }
+            } catch (RuntimeException ignored) {
+                // Fehlgeschlagener Probe wird vom Breaker gezählt und führt wieder nach OPEN.
+            }
         }
 
-        try {
-            circuitBreaker.executeRunnable(() ->
-                    probeClient.get()
-                            .uri("/actuator/health/liveness")
-                            .retrieve()
-                            .toBodilessEntity());
-        } catch (RuntimeException ignored) {
-            // Fehlgeschlagener Probe wird vom Breaker gezählt und führt wieder nach OPEN.
+        if (recoveryNotificationPending && circuitBreaker.getState() == CircuitBreaker.State.CLOSED) {
+            try {
+                managementClient.requestRecovery("THERMAL");
+                recoveryNotificationPending = false;
+            } catch (RuntimeException ignored) {
+                // Analysis Management kann vorübergehend nicht erreichbar sein; beim nächsten Tick erneut versuchen.
+            }
         }
     }
 }
