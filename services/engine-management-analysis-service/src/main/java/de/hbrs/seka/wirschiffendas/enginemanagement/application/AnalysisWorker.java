@@ -33,11 +33,22 @@ public class AnalysisWorker {
         // Alle Vorgänger-Algorithmen müssen erfolgreich gewesen sein
         boolean previousOk = command.previousResults().stream().noneMatch(result -> "FAILED".equalsIgnoreCase(result.get("result")));
 
-        boolean configOk = valid(command.configuration().get("engineManagementSystem"));
+        String engineManagementSystem = command.configuration().get("engineManagementSystem");
+        boolean configOk = valid(engineManagementSystem);
 
         boolean ok = previousOk && configOk;
+        String message = ok
+                ? null
+                : !configOk
+                    ? "Invalid engine management configuration: engineManagementSystem must be STANDARD, PREMIUM or ADVANCED"
+                    : "Engine management analysis requires successful predecessor results";
 
-        managementClient.reportResult(command.analysisId(), ALGORITHM, ok ? "READY" : "FAILED", ok ? "OK" : "FAILED", null);
+        managementClient.reportResult(
+                command.analysisId(),
+                ALGORITHM,
+                ok ? "READY" : "FAILED",
+                ok ? "OK" : "FAILED",
+                message);
     }
 
     /**
@@ -62,7 +73,12 @@ public class AnalysisWorker {
     }
 
     /**
-     * Prüft, ob ein Konfigurationswert gesetzt und nicht als INVALID markiert ist.
+     * Nur die kontrollierten fachlich gültigen Demo-Varianten werden verarbeitet.
+     * INVALID bleibt als absichtlicher Fehlerfall für den Demonstrator verfügbar.
      */
-    private boolean valid(String value) { return value != null && !"INVALID".equalsIgnoreCase(value); }
+    private boolean valid(String value) {
+        return "STANDARD".equalsIgnoreCase(value)
+                || "PREMIUM".equalsIgnoreCase(value)
+                || "ADVANCED".equalsIgnoreCase(value);
+    }
 }

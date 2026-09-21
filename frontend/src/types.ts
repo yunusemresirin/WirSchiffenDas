@@ -9,14 +9,21 @@ export type AlgorithmName =
   | 'ELECTRICAL'
   | 'ENGINE_MANAGEMENT';
 
+// Kontrollierte Varianten der simulierten Optional-Equipment-Konfiguration.
+export type ConfigurationVariant =
+  | 'STANDARD'
+  | 'PREMIUM'
+  | 'ADVANCED'
+  | 'INVALID';
+
 // Engine-Konfiguration mit den Eingabewerten für die Analyse
 export interface EngineConfiguration {
   configurationId: string;
-  oilSystem: string;
-  fuelSystem: string;
-  coolingSystem: string;
-  electricalSystem: string;
-  engineManagementSystem: string;
+  oilSystem: ConfigurationVariant;
+  fuelSystem: ConfigurationVariant;
+  coolingSystem: ConfigurationVariant;
+  electricalSystem: ConfigurationVariant;
+  engineManagementSystem: ConfigurationVariant;
 }
 
 // Anfrage zum Anlegen einer Konfiguration (ohne generierte ID)
