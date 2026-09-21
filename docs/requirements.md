@@ -139,6 +139,8 @@ Konfigurationswerte verwendet werden. Der Prototyp verwendet dafür die
 kontrollierten Varianten `STANDARD`, `PREMIUM`, `ADVANCED` und den
 bewussten Demonstrationswert `INVALID`.
 
+**Quellenbezug:** Die Fallstudie nennt für den Yacht-Motor konkrete Optional-Equipment-Bereiche wie Oil System, Fuel System, Cooling System und Engine Management System. Übungsblatt Nr. 5 erlaubt für den Proof-of-Concept ausdrücklich Dummy-Werte, wenn sich aus dem Datenblatt keine alternativen Eingabewerte ableiten lassen. Die Varianten `STANDARD`, `PREMIUM`, `ADVANCED` und `INVALID` sind daher kontrollierte Simulationswerte des Prototyps und keine Originalwerte des Motordatenblatts.
+
 `INVALID` ist syntaktisch eine erlaubte Konfigurationsvariante und darf
 persistiert werden. Fachlich ist sie jedoch ungültig: Der jeweils zuständige
 Analyse-Service muss den Wert erkennen, den Algorithmus mit `FAILED`
