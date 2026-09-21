@@ -33,13 +33,23 @@ public class AnalysisWorker {
             return;
         }
 
-        // Beide Fluid-Systeme müssen gültig sein
-        boolean ok = valid(command.configuration().get("oilSystem"))
-                && valid(command.configuration().get("fuelSystem"));
-        String result = ok ? "OK" : "FAILED";
-        managementClient.reportResult(command.analysisId(), ALGORITHM, ok ? "READY" : "FAILED", result, null);
+        String oilSystem = command.configuration().get("oilSystem");
+        String fuelSystem = command.configuration().get("fuelSystem");
 
-        // Nur bei Erfolg den nächsten Algorithmus der Kette starten
+        // Beide Fluid-Systeme müssen eine der erlaubten Varianten verwenden.
+        boolean ok = valid(oilSystem) && valid(fuelSystem);
+        String result = ok ? "OK" : "FAILED";
+        String message = ok
+                ? null
+                : "Invalid fluid configuration: oilSystem and fuelSystem must be STANDARD, PREMIUM or ADVANCED";
+        managementClient.reportResult(
+                command.analysisId(),
+                ALGORITHM,
+                ok ? "READY" : "FAILED",
+                result,
+                message);
+
+        // Ungültige Konfiguration wird nicht weiterverarbeitet.
         if (ok) {
             nextServiceClient.startNext(command, result);
         }
@@ -60,9 +70,12 @@ public class AnalysisWorker {
     }
 
     /**
-     * Prüft, ob ein Konfigurationswert gesetzt und nicht als INVALID markiert ist.
+     * Nur die kontrollierten fachlich gültigen Demo-Varianten werden verarbeitet.
+     * INVALID bleibt als absichtlicher Fehlerfall für den Demonstrator verfügbar.
      */
     private boolean valid(String value) {
-        return value != null && !"INVALID".equalsIgnoreCase(value);
+        return "STANDARD".equalsIgnoreCase(value)
+                || "PREMIUM".equalsIgnoreCase(value)
+                || "ADVANCED".equalsIgnoreCase(value);
     }
 }
