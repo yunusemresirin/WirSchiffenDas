@@ -121,3 +121,17 @@ Web UI / Nginx
 ```
 
 Dadurch bleibt die Browser-Konfiguration unabhängig von den internen Docker-Service-Adressen und es ist keine zusätzliche CORS-Konfiguration in allen Backends erforderlich.
+
+
+## Automatische Recovery bei technischen Ausfällen
+
+Der manuelle Retry bleibt als UI-Funktion erhalten. Für die Circuit-Breaker-Demonstration ist er jedoch nicht erforderlich:
+
+1. Zielservice stoppen und eine Analyse starten.
+2. Der aufrufende Circuit Breaker wechselt nach dem fehlgeschlagenen Aufruf nach `OPEN`.
+3. Nach der Wartezeit folgt `HALF_OPEN`; ein geplanter Liveness-Probe testet den Zielservice.
+4. Bleibt der Service unerreichbar, geht der Breaker wieder nach `OPEN`.
+5. Nach dem Start des Zielservices schließt ein erfolgreicher Probe den Breaker.
+6. Analysis Management setzt den betroffenen `AnalysisRun` automatisch am zuvor fehlgeschlagenen Algorithmus fort.
+
+Die Web-UI pollt Runtime-Health alle 2 Sekunden ohne Browser-/Proxy-Cache und den aktiven bzw. technisch unterbrochenen `AnalysisRun` weiter, sodass die Zustandsänderungen ohne Benutzerinteraktion sichtbar werden.
