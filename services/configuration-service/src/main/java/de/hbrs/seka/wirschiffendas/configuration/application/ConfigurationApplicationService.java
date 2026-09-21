@@ -27,11 +27,11 @@ public class ConfigurationApplicationService {
     public EngineConfiguration create(CreateConfigurationRequest request) {
         EngineConfiguration configuration = new EngineConfiguration(
                 "C-" + UUID.randomUUID(),
-                request.oilSystem(),
-                request.fuelSystem(),
-                request.coolingSystem(),
-                request.electricalSystem(),
-                request.engineManagementSystem());
+                request.oilSystem().name(),
+                request.fuelSystem().name(),
+                request.coolingSystem().name(),
+                request.electricalSystem().name(),
+                request.engineManagementSystem().name());
 
         return repository.save(configuration);
     }

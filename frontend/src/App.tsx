@@ -12,6 +12,7 @@ import {
   Container,
   Divider,
   LinearProgress,
+  MenuItem,
   Paper,
   Snackbar,
   Stack,
@@ -47,11 +48,22 @@ import type {
   AnalysisResponse,
   AnalysisStatus,
   CircuitBreakerState,
+  ConfigurationVariant,
   CreateConfigurationRequest,
   EngineConfiguration,
   ServiceHealth,
   ServiceKey,
 } from './types';
+
+const configurationVariants: Array<{
+  value: ConfigurationVariant;
+  label: string;
+}> = [
+  { value: 'STANDARD', label: 'STANDARD' },
+  { value: 'PREMIUM', label: 'PREMIUM' },
+  { value: 'ADVANCED', label: 'ADVANCED' },
+  { value: 'INVALID', label: 'INVALID · Demo-Fehlerfall' },
+];
 
 const emptyConfiguration: CreateConfigurationRequest = {
   oilSystem: 'STANDARD',
@@ -146,7 +158,10 @@ function ConfigurationSection({
   );
   const [localBusy, setLocalBusy] = useState(false);
 
-  const setField = (field: keyof CreateConfigurationRequest, next: string) => {
+  const setField = (
+    field: keyof CreateConfigurationRequest,
+    next: ConfigurationVariant,
+  ) => {
     onChange({ ...value, [field]: next });
   };
 
@@ -196,7 +211,7 @@ function ConfigurationSection({
             <Box>
               <Typography variant="h6">1. Engine-Konfiguration</Typography>
               <Typography variant="body2" color="text.secondary">
-                Neue Konfiguration speichern oder eine vorhandene ID laden.
+                Optional Equipment konfigurieren. STANDARD, PREMIUM und ADVANCED sind gültig; INVALID dient als demonstrierbarer fachlicher Fehlerfall.
               </Typography>
             </Box>
           </Stack>
@@ -212,33 +227,37 @@ function ConfigurationSection({
               gap: 2,
             }}
           >
-            <TextField
-              label="Oil System"
-              value={value.oilSystem}
-              onChange={(event) => setField('oilSystem', event.target.value)}
-            />
-            <TextField
-              label="Fuel System"
-              value={value.fuelSystem}
-              onChange={(event) => setField('fuelSystem', event.target.value)}
-            />
-            <TextField
-              label="Cooling System"
-              value={value.coolingSystem}
-              onChange={(event) => setField('coolingSystem', event.target.value)}
-            />
-            <TextField
-              label="Electrical System"
-              value={value.electricalSystem}
-              onChange={(event) => setField('electricalSystem', event.target.value)}
-            />
-            <TextField
-              label="Engine Management"
-              value={value.engineManagementSystem}
-              onChange={(event) =>
-                setField('engineManagementSystem', event.target.value)
-              }
-            />
+            {(
+              [
+                ['oilSystem', 'Oil System'],
+                ['fuelSystem', 'Fuel System'],
+                ['coolingSystem', 'Cooling System'],
+                ['electricalSystem', 'Electrical System'],
+                ['engineManagementSystem', 'Engine Management'],
+              ] as Array<[keyof CreateConfigurationRequest, string]>
+            ).map(([field, label]) => (
+              <TextField
+                key={field}
+                select
+                label={label}
+                value={value[field]}
+                onChange={(event) =>
+                  setField(field, event.target.value as ConfigurationVariant)
+                }
+                helperText={
+                  value[field] === 'INVALID'
+                    ? 'Absichtlicher Fehlerfall: zuständige Analyse endet mit FAILED.'
+                    : 'Gültige Konfigurationsvariante'
+                }
+                error={value[field] === 'INVALID'}
+              >
+                {configurationVariants.map((variant) => (
+                  <MenuItem key={variant.value} value={variant.value}>
+                    {variant.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ))}
           </Box>
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>

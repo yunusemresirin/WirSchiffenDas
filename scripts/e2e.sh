@@ -144,5 +144,35 @@ if [[ "$ready_count" != "4" ]]; then
 fi
 
 echo "Automatische Recovery erfolgreich: $analysis_id"
+
+echo
+echo "=== E2E-03 INVALID-Konfigurationsvariante wird fachlich abgelehnt ==="
+configuration_id="$(create_invalid_configuration)"
+analysis_id="$(start_analysis "$configuration_id")"
+invalid_body="$(wait_for_algorithm_status "$analysis_id" "THERMAL" "FAILED")"
+
+if [[ "$(jq -r '.overallResult' <<<"$invalid_body")" != "FAILED" ]]; then
+  echo "Für coolingSystem=INVALID wurde overallResult=FAILED erwartet." >&2
+  exit 1
+fi
+
+fluid_status="$(jq -r '.algorithms[] | select(.algorithm == "FLUID") | .status' <<<"$invalid_body")"
+electrical_status="$(jq -r '.algorithms[] | select(.algorithm == "ELECTRICAL") | .status' <<<"$invalid_body")"
+engine_status="$(jq -r '.algorithms[] | select(.algorithm == "ENGINE_MANAGEMENT") | .status' <<<"$invalid_body")"
+thermal_message="$(jq -r '.algorithms[] | select(.algorithm == "THERMAL") | .message // ""' <<<"$invalid_body")"
+
+if [[ "$fluid_status" != "READY" || "$electrical_status" != "PENDING" || "$engine_status" != "PENDING" ]]; then
+  echo "INVALID sollte die Kette bei THERMAL stoppen, ohne nachgelagerte Algorithmen zu starten." >&2
+  echo "$invalid_body" >&2
+  exit 1
+fi
+
+if [[ "$thermal_message" != *"Invalid thermal configuration"* ]]; then
+  echo "Erwartete fachliche Fehlermeldung der Thermal-Analyse fehlt." >&2
+  echo "$invalid_body" >&2
+  exit 1
+fi
+
+echo "INVALID wurde korrekt im zuständigen Algorithmus erkannt und nicht weiterverarbeitet: $analysis_id"
 echo
 echo "Alle End-to-End-Tests erfolgreich."
