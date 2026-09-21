@@ -14,8 +14,18 @@
 \usepackage{makecell}
 \usepackage{xurl}
 \usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{caption}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage[
+  backend=bibtex,
+  style=numeric,
+  sorting=none,
+  maxbibnames=99,
+  giveninits=true
+]{biblatex}
+\addbibresource{references.bib}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
@@ -29,6 +39,7 @@
 \definecolor{lightgray}{HTML}{F3F5F6}
 \definecolor{warnorange}{HTML}{B26A00}
 \definecolor{okgreen}{HTML}{2E7D32}
+\definecolor{codegray}{HTML}{6B7280}
 
 \hypersetup{
   colorlinks=true,
@@ -98,7 +109,6 @@
 
 \vfill
 \begin{tabular}{rl}
-\textbf{Dokumenttyp:} & Architekturdokumentation nach arc42 \\
 \textbf{Architekturstil:} & Microservices \\
 \textbf{Schwerpunkt:} & Docker und Docker Compose \\
 \textbf{Stand:} & \DTMtoday \\
@@ -114,5 +124,8 @@
 \input{sections/part-2-solution-runtime.tex}
 \input{sections/part-3-deployment-quality.tex}
 \input{sections/part-4-risks-summary.tex}
+
+\newpage
+\printbibliography[heading=bibintoc,title={Literaturverzeichnis}]
 
 \end{document}

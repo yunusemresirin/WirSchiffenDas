@@ -1,0 +1,43 @@
+\babel@toc {ngerman}{}\relax 
+\contentsline {section}{\numberline {1}Einführung und Ziele}{4}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Aufgabenstellung}{4}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Architekturziele}{4}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Wesentliche fachliche Anforderungen}{4}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Randbedingungen}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Technische Randbedingungen}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Projektgrenzen}{5}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Kontextabgrenzung}{5}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Fachlicher Kontext}{5}{subsection.3.1}%
+\contentsline {section}{\numberline {4}Lösungsstrategie}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Strategic Domain-Driven Design}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Datenhoheit und Integrationsprinzip}{6}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Bausteinsicht}{7}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Ebene 1: Systemübersicht}{7}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Externe Schnittstellen}{7}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Interne Schnittstellen}{7}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Laufzeitsicht}{8}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Happy Path}{8}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Fehlerfall, Circuit Breaker und Retry}{9}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Verteilungssicht}{10}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Deployment-Prinzipien}{10}{subsection.7.1}%
+\contentsline {section}{\numberline {8}Querschnittliche Konzepte}{11}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Status- und Ergebnismodell}{11}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Resilience}{11}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Persistenz und Datenhoheit}{11}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Architekturentscheidungen}{12}{section.9}%
+\contentsline {subsection}{\numberline {9.1}ADR-01: Fachlicher Schnitt statt technischer Layer}{12}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}ADR-02: REST/HTTP für Version 1}{12}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}ADR-03: Choreographie statt zentraler Orchestration}{12}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}ADR-04: Circuit Breaker mit Resilience4j}{12}{subsection.9.4}%
+\contentsline {subsection}{\numberline {9.5}ADR-05: Container pro Microservice}{12}{subsection.9.5}%
+\contentsline {subsection}{\numberline {9.6}ADR-06: Keine Shared Persistence}{12}{subsection.9.6}%
+\contentsline {section}{\numberline {10}Qualitätsanforderungen und Architecture Smells}{13}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Priorisierte Probleme und Gegenma\ss {}nahmen}{13}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Qualitätsszenarien}{13}{subsection.10.2}%
+\contentsline {section}{\numberline {11}Risiken und technische Schulden}{14}{section.11}%
+\contentsline {section}{\numberline {12}Quellenbasis}{14}{section.12}%
+\contentsline {section}{\numberline {13}Erklärung zur Nutzung von KI-Werkzeugen}{14}{section.13}%
+\contentsline {subsection}{\numberline {13.1}Eingesetzte Werkzeuge}{14}{subsection.13.1}%
+\contentsline {subsection}{\numberline {13.2}Art und Umfang der Nutzung}{14}{subsection.13.2}%
+\contentsline {subsection}{\numberline {13.3}Grenzen der Nutzung}{14}{subsection.13.3}%
+\contentsline {section}{Literaturverzeichnis}{16}{subsection.13.3}%

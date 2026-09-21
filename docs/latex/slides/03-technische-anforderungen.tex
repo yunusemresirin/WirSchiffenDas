@@ -64,27 +64,27 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]
       \end{itemize}
       \vspace{0.2cm}
       \begin{block}{Nachweis}
-        \small 6 $\times$ \code{Dockerfile} -- eines pro Service.
+        \small 6 Backend-Dockerfiles; zusätzlich frontend/Dockerfile.
       \end{block}
     \end{column}
   \end{columns}
 \end{frame}
 
 % --- TA-03 -----------------------------------------------------------------
-\begin{frame}[fragile,shrink=5]{TA-03 -- Docker Compose}
+\begin{frame}[fragile]{TA-03 -- Docker Compose}
   \tabadge{TA-03}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.54\textwidth}
       \begin{lstlisting}[style=yaml]
 services:
   configuration-service:
-    image: ysirin2s/seka-wirschaffendas:configuration-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:configuration-service-v${VERSION}
     ports:
       - "8081:8081"
     volumes:
       - configuration-data:/app/data
   analysis-management-service:
-    image: ysirin2s/seka-wirschaffendas:analysis-management-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:analysis-management-service-v${VERSION}
     ports:
       - "8082:8082"
     environment:
@@ -98,8 +98,8 @@ services:
     \begin{column}{0.42\textwidth}
       \textbf{Erläuterung}
       \begin{itemize}
-        \item Compose definiert alle sechs Services, Ports, Umgebungsvariablen und getrennte Volumes.
-        \item Services finden sich über \textbf{Service-Namen} im Netzwerk \code{wirschaffendas-network} -- keine fest verdrahteten IPs.
+        \item Compose definiert sechs Backend-Services und web-ui, Ports, Umgebungsvariablen und getrennte Volumes.
+        \item Services finden sich über \textbf{Service-Namen} im Netzwerk \code{wirschiffendas-network} -- keine fest verdrahteten IPs.
         \item \code{depends_on} steuert die Startreihenfolge.
       \end{itemize}
       \begin{block}{Start}
@@ -110,7 +110,7 @@ services:
 \end{frame}
 
 % --- TA-04 -----------------------------------------------------------------
-\begin{frame}[fragile,shrink=3]{TA-04 -- Resilience4j: Circuit Breaker}
+\begin{frame}[fragile]{TA-04 -- Resilience4j: Circuit Breaker}
   \tabadge{TA-04}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.56\textwidth}
@@ -140,6 +140,8 @@ private void fallback(AnalysisCommand command,
         \item Der aufrufende Service bleibt erreichbar.
         \item Nach Wartezeit $\rightarrow$ Half-Open $\rightarrow$ Retry möglich.
       \end{itemize}
+
+      \vspace{-0.1cm}
       \begin{block}{Wirkung}
         \small Isolation of Failures -- der Fehler bleibt lokal (ADR-04).
       \end{block}
@@ -169,17 +171,18 @@ resilience4j:
       \textbf{Zustandsmodell}
       \begin{center}
       \begin{tikzpicture}[
-        node distance=7mm,
+        node distance=9mm,
         every node/.style={font=\scriptsize},
-        st/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=19mm,minimum height=6mm,align=center},
-        op/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=19mm,minimum height=6mm,align=center}
+        st/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=15mm,minimum height=6mm,align=center},
+        op/.style={draw=warnorange,rounded corners,fill=warnorange!10,minimum width=15mm,minimum height=6mm,align=center}
       ]
       \node[st] (c) {Closed};
       \node[op,right=of c] (o) {Open};
       \node[st,right=of o] (h) {Half-Open};
       \draw[-{Latex},thick] (c) -- node[above]{Fehler} (o);
-      \draw[-{Latex},thick] (o) -- node[above]{10s} (h);
-      \draw[-{Latex},thick] (h) to[bend left=35] node[below]{Erfolg} (c);
+      \draw[-{Latex},thick] (o) to[bend left=20] node[above]{10s} (h);
+      \draw[-{Latex},thick] (h) to[bend left=20] node[below]{Fehler} (o);
+      \draw[-{Latex},thick] (h) to[bend left=45] node[below]{Erfolg} (c);
       \end{tikzpicture}
       \end{center}
 
@@ -210,7 +213,7 @@ resilience4j:
     \end{column}
     \begin{column}{0.44\textwidth}
       \begin{block}{Begründung (ADR-02)}
-        \small Für den kleinen PoC ist REST einfach nachvollziehbar, testbar und mit der Aufgabenstellung kompatibel. Kafka bleibt bewusst außerhalb des Kernumfangs.
+        \small Für den kleinen PoC ist REST einfach nachvollziehbar, testbar und mit der Aufgabenstellung kompatibel. Kafka bleibt bewusst au\ss{}erhalb des Kernumfangs.
       \end{block}
       \vspace{0.2cm}
       \begin{block}{Trade-off}

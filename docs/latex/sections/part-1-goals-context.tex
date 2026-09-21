@@ -1,6 +1,6 @@
 \section{Einführung und Ziele}
 \subsection{Aufgabenstellung}
-Ausgangspunkt ist die in der Fallstudie beschriebene Analyse-Komponente von \emph{Manufacturing Products}. Mehrere fachlich eigenständige Validierungs- und Simulationsalgorithmen sind dort eng gekoppelt. Lange Laufzeiten einzelner Analysen blockieren dadurch den gesamten Konstruktionsablauf und verschlechtern die Responsiveness der Anwendung.
+Ausgangspunkt ist die in der Fallstudie \cite{fallstudie2026} beschriebene Analyse-Komponente von \emph{Manufacturing Products}. Mehrere fachlich eigenständige Validierungs- und Simulationsalgorithmen sind dort eng gekoppelt. Lange Laufzeiten einzelner Analysen blockieren dadurch den gesamten Konstruktionsablauf und verschlechtern die Responsiveness der Anwendung.
 
 Der Proof-of-Concept zerlegt diesen Bereich in eigenständig deploybare Microservices. Eine Motorkonfiguration wird persistent verwaltet und anschlie\ss{}end durch mehrere fachlich getrennte Analyse-Services geprüft. Status und Resultate jedes Algorithmus sollen sichtbar sein. Ein einzelner fehlgeschlagener Schritt muss gezielt wiederholt werden können, ohne bereits erfolgreiche Schritte erneut auszuführen.
 
@@ -34,7 +34,6 @@ Testbarkeit & Happy Path, Fehlerfall und Retry sind automatisiert sowie über di
 \newpage
 
 \section{Randbedingungen}
-\subsection{Technische Randbedingungen}
 \begin{tabularx}{\textwidth}{L{4.2cm}Y}
 \toprule
 \textbf{Technologie} & \textbf{Verwendung} \\
@@ -49,32 +48,17 @@ PlantUML / TikZ & Architekturdiagramme und Dokumentation. \\
 \bottomrule
 \end{tabularx}
 
-\subsection{Projektgrenzen}
 Nicht Bestandteil dieses Proof-of-Concepts sind eine reale physikalische Motorsimulation, die vollständige Migration der bestehenden Unternehmenssoftware, Kubernetes oder Cloud-Deployment sowie eine Camunda- oder MCP-Orchestration des Order-Fulfillment-Prozesses. Kafka wird im Kernumfang nicht verwendet.
 
 Die vier Analyse-Services arbeiten daher mit vereinfachten, deterministischen Prüfregeln. Im Mittelpunkt stehen die Architekturentscheidungen, Servicegrenzen, Datenhoheit, Resilience und Nachvollziehbarkeit der Verarbeitung.
 
 \section{Kontextabgrenzung}
-\subsection{Fachlicher Kontext}
 Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt diese Rolle der Demo-Operator. Er erstellt oder lädt eine Motorkonfiguration, startet die Qualitätsanalyse, beobachtet den Bearbeitungsstatus und stö\ss{}t bei Bedarf einen Retry an.
 
-\vfill
-\begin{center}
-\begin{tikzpicture}[
-  node distance=12mm and 30mm,
-  every node/.style={font=\normalsize},
-  actor/.style={draw,rounded corners,fill=lightgray,minimum width=24mm,minimum height=11mm,align=center},
-  system/.style={draw=darkblue,rounded corners,fill=lightblue,minimum width=32.5mm,minimum height=12mm,align=center}
-]
-\node[actor] (eng) {Ingenieur};
-\node[system,right=of eng] (ui) {React/MU\\Frontend};
-\node[system,right=of ui] (core) {Engine Quality\\Analysis};
-\draw[-{Latex},thick] (eng) -- node[above]{Bedienung} (ui);
-\draw[-{Latex},thick] (ui) -- node[above]{REST/HTTP} (core);
-\end{tikzpicture}
-\end{center}
-\vfill
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{../diagrams/Kontextsicht.jpeg}
+  \caption{Kontextsicht: Akteur, Frontend und Engine Quality Analysis.}
+\end{figure}
 
 Die Systemgrenze umfasst ausschlie\ss{}lich den PoC der Engine Quality Analysis. Externe Unternehmenssysteme und der vollständige Order-Fulfillment-Prozess liegen au\ss{}erhalb dieser Dokumentation.
-
-\newpage

@@ -24,7 +24,7 @@ Zusammenhang erklärt werden.
 
 | Datei | Zeilen | Symbol |
 |---|---|---|
-| `services/fluid-analysis-service/src/main/java/de/hbrs/seka/wirschaffendas/fluid/FluidAnalysisServiceApplication.java` | 1–11 | `@SpringBootApplication`, `@EnableAsync` |
+| `services/fluid-analysis-service/src/main/java/de/hbrs/seka/wirschiffendas/fluid/FluidAnalysisServiceApplication.java` | 1–11 | `@SpringBootApplication`, `@EnableAsync` |
 | `services/analysis-management-service/.../AnalysisManagementServiceApplication.java` | 1–11 | `@SpringBootApplication` |
 | `services/configuration-service/.../ConfigurationServiceApplication.java` | 1–11 | `@SpringBootApplication` |
 
@@ -91,14 +91,14 @@ einen eigenen Port → Grundlage für Independent Deployability (QR-03, ADR-05).
 ```yaml
 services:
   configuration-service:
-    image: ysirin2s/seka-wirschaffendas:configuration-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:configuration-service-v${VERSION}
     ports:
       - "8081:8081"
     volumes:
       - configuration-data:/app/data
 
   analysis-management-service:
-    image: ysirin2s/seka-wirschaffendas:analysis-management-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:analysis-management-service-v${VERSION}
     ports:
       - "8082:8082"
     environment:
@@ -109,9 +109,9 @@ services:
       - analysis-data:/app/data
 ```
 
-**Erläuterung:** Compose definiert alle sechs Services, ihre Ports, Umgebungs-
+**Erläuterung:** Compose definiert sechs Backend-Services und web-ui, ihre Ports, Umgebungs-
 variablen (Service-URLs) und getrennte Volumes. Die Services finden sich über
-ihre **Service-Namen** im gemeinsamen Netzwerk `wirschaffendas-network` – keine
+ihre **Service-Namen** im gemeinsamen Netzwerk `wirschiffendas-network` – keine
 fest verdrahteten IPs. `depends_on` steuert die Startreihenfolge.
 
 **Präsentations-Tipp:** `docker compose up --build` live zeigen, dann
@@ -357,7 +357,7 @@ im aufrufenden Service behandelbar.
 Container.
 
 **Nachweis:** Identisch zu **TA-02** und **TA-03**. Sechs Dockerfiles + Compose
-mit sechs Services und getrennten Ports (8081–8086).
+mit sechs Backend-Services (8081–8086) und web-ui (Host 3000 → Container 80).
 
 **Erläuterung:** Unterstützt Independent Deployability (QR-03). Ein einzelner
 Container kann gestoppt/gestartet werden, ohne die anderen zu beeinflussen.
