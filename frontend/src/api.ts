@@ -68,7 +68,9 @@ export function startAnalysis(
  * Lädt den aktuellen Zustand einer Analyse.
  */
 export function loadAnalysis(analysisId: string): Promise<AnalysisResponse> {
-  return requestJson(`/api/analyses/${encodeURIComponent(analysisId)}`);
+  return requestJson(`/api/analyses/${encodeURIComponent(analysisId)}`, {
+    cache: 'no-store',
+  });
 }
 
 /**
@@ -158,9 +160,11 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
       },
     );
 
-    // 502/504 stammen beim Docker-Setup vom Nginx-Proxy, wenn der Zielcontainer
-    // nicht erreichbar ist. Sie dürfen nicht als Antwort des Services gewertet werden.
-    if (response.status === 502 || response.status === 504) {
+    // Proxy-Fehler entstehen, wenn der Zielcontainer nicht erreichbar ist.
+    // Nginx liefert typischerweise 502/504, der Vite-Dev-Proxy kann 500 liefern.
+    // 503 bleibt ausgenommen, weil Spring Actuator bei einem OPEN Breaker selbst
+    // mit 503 antworten kann, obwohl der Service-Prozess erreichbar ist.
+    if (response.status >= 500 && response.status !== 503) {
       return {
         key,
         reachable: false,
