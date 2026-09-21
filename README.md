@@ -203,9 +203,9 @@ Thermal wieder starten:
 docker compose -f alternative_docker-compose.yml start thermal-analysis-service
 ```
 
-Danach in der UI beim fehlgeschlagenen Thermal-Algorithmus auf **Retry** klicken. Die Analyse wird ab Thermal fortgesetzt; bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt.
+Danach ist **keine weitere Benutzeraktion nötig**. Im nächsten `HALF_OPEN`-Fenster prüft Fluid den Thermal-Service automatisch über dessen Liveness-Endpunkt. Ist Thermal wieder erreichbar, wechselt der Breaker nach `CLOSED` und Analysis Management setzt alle durch diesen technischen Ausfall unterbrochenen Läufe automatisch ab `THERMAL` fort. Bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt.
 
-Hinweis: Der Retry wird vom `analysis-management-service` direkt an das Retry-Ziel geschickt. Der Breaker Fluid → Thermal wird deshalb erst bei einem späteren normalen Aufruf über genau diese Kante wieder vollständig geschlossen. Das ist gewollt und macht den Unterschied zwischen Choreographie-Pfad und Management-Retry sichtbar.
+Der Retry-Button bleibt als manueller Fallback erhalten, ist für die Circuit-Breaker-Demo aber nicht mehr erforderlich. Fachliche `FAILED`-Ergebnisse werden nicht automatisch wiederholt; Auto-Recovery gilt nur für Fehler mit Ursache `service unavailable`.
 
 ## Automatisierter End-to-End-Test
 
@@ -225,7 +225,7 @@ docker compose -f alternative_docker-compose.yml up --build -d
 COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
-Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem Retry.
+Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem automatischem Circuit-Breaker-Recovery und Resume ohne manuellen Retry.
 
 Weitere Details: `docs/testing.md`.
 
