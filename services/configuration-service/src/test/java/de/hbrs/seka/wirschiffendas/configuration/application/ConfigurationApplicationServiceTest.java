@@ -46,4 +46,22 @@ class ConfigurationApplicationServiceTest {
         assertThat(created.getEngineManagementSystem()).isEqualTo("ADVANCED");
         verify(repository).save(any(EngineConfiguration.class));
     }
+    @Test
+    void invalidVariantIsPersistedForAnalysisDemo() {
+        when(repository.save(any(EngineConfiguration.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        CreateConfigurationRequest request = new CreateConfigurationRequest(
+                ConfigurationVariant.INVALID,
+                ConfigurationVariant.PREMIUM,
+                ConfigurationVariant.STANDARD,
+                ConfigurationVariant.PREMIUM,
+                ConfigurationVariant.ADVANCED);
+
+        EngineConfiguration created = service.create(request);
+
+        assertThat(created.getOilSystem()).isEqualTo("INVALID");
+        verify(repository).save(any(EngineConfiguration.class));
+    }
+
 }
