@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2260" height="2000" viewBox="0 0 2260 2000">
+<rect width="100%" height="100%" fill="white"/>
+<rect x="57" y="38" width="236.5" height="42" fill="white"/>
+<text x="60" y="71.16" font-family="Arial, sans-serif" font-size="38" font-weight="700" text-anchor="start">Laufzeitsicht</text>
+<rect x="57" y="94" width="477.46875" height="29" fill="white"/>
+<text x="60" y="116.5" font-family="Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start">WirSchiffenDas · erfolgreicher Analyselauf</text>
+<rect x="57" y="142" width="762.96875" height="25" fill="white"/>
+<text x="60" y="161.22" font-family="Arial, sans-serif" font-size="21" font-weight="400" text-anchor="start">Voraussetzung: gespeicherte, gültige Motorkonfiguration; alle Services erreichbar.</text>
+<circle cx="100" cy="223" r="17" fill="white" stroke="black" stroke-width="2"/>
+<polyline points="100,240 100,278" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="72,255 128,255" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="100,278 75,308" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="100,278 125,308" fill="none" stroke="black" stroke-width="2"/>
+<rect x="52.5" y="315" width="95.0" height="24" fill="white"/>
+<text x="100" y="333.4" font-family="Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle">Ingenieur</text>
+<polyline points="100,350 100,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="265.0" y="205" width="210" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="319.5" y="216" width="101.0" height="22" fill="white"/>
+<text x="370" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«boundary»</text>
+<rect x="291.75390625" y="247" width="156.4921875" height="25" fill="white"/>
+<text x="370" y="266.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Weboberfläche</text>
+<rect x="300.5" y="273" width="139.0" height="25" fill="white"/>
+<text x="370" y="292.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">React / Nginx</text>
+<polyline points="370,350 370,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="615.0" y="205" width="250" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="700.0" y="216" width="80.0" height="22" fill="white"/>
+<text x="740" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«control»</text>
+<rect x="694.0" y="247" width="92.0" height="25" fill="white"/>
+<text x="740" y="266.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Analysis</text>
+<rect x="673.0" y="273" width="134.0" height="25" fill="white"/>
+<text x="740" y="292.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Management</text>
+<polyline points="740,350 740,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="975.0" y="205" width="210" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1038.5" y="216" width="83.0" height="22" fill="white"/>
+<text x="1080" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«service»</text>
+<rect x="1007.75" y="247" width="144.5" height="25" fill="white"/>
+<text x="1080" y="266.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Configuration</text>
+<polyline points="1080,350 1080,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="1255.0" y="205" width="210" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1318.5" y="216" width="83.0" height="22" fill="white"/>
+<text x="1360" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«service»</text>
+<rect x="1285.5078125" y="247" width="148.984375" height="25" fill="white"/>
+<text x="1360" y="266.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Fluid Analysis</text>
+<polyline points="1360,350 1360,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="1515.0" y="205" width="210" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1578.5" y="216" width="83.0" height="22" fill="white"/>
+<text x="1620" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«service»</text>
+<rect x="1530.2578125" y="247" width="179.484375" height="25" fill="white"/>
+<text x="1620" y="266.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Thermal Analysis</text>
+<polyline points="1620,350 1620,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="1775.0" y="205" width="210" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1838.5" y="216" width="83.0" height="22" fill="white"/>
+<text x="1880" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«service»</text>
+<rect x="1784.5078125" y="247" width="190.984375" height="25" fill="white"/>
+<text x="1880" y="266.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="middle">Electrical Analysis</text>
+<polyline points="1880,350 1880,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="2035.0" y="205" width="210" height="108" fill="white" stroke="black" stroke-width="2"/>
+<rect x="2098.5" y="216" width="83.0" height="22" fill="white"/>
+<text x="2140" y="232.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="middle">«service»</text>
+<rect x="2044.75" y="247" width="190.5" height="23" fill="white"/>
+<text x="2140" y="264.58" font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle">Engine Management</text>
+<rect x="2098.0" y="273" width="84.0" height="23" fill="white"/>
+<text x="2140" y="290.58" font-family="Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle">Analysis</text>
+<polyline points="2140,350 2140,1740" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="363" y="375" width="14" height="410" fill="white" stroke="black" stroke-width="2"/>
+<rect x="733" y="440" width="14" height="295" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1073" y="505" width="14" height="45" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1353" y="645" width="14" height="45" fill="white" stroke="black" stroke-width="2"/>
+<rect x="160.0" y="346" width="143.0" height="24" fill="white"/>
+<text x="231.5" y="364.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">Analyse starten</text>
+<polyline points="100,375 363,375" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="351.12984377594,380.3008858897744 363,375 351.12984377594,369.6991141102256" fill="none" stroke="black" stroke-width="2"/>
+<rect x="464.00390625" y="386" width="181.9921875" height="24" fill="white"/>
+<text x="555.0" y="404.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">POST /api/analyses</text>
+<rect x="487.0" y="411" width="136.0" height="24" fill="white"/>
+<text x="555.0" y="429.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">configurationId</text>
+<polyline points="377,440 733,440" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="721.12984377594,445.3008858897744 733,440 721.12984377594,434.6991141102256" fill="none" stroke="black" stroke-width="2"/>
+<rect x="786.25390625" y="476" width="247.4921875" height="24" fill="white"/>
+<text x="910.0" y="494.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">GET /api/configurations/{id}</text>
+<polyline points="747,505 1073,505" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1061.12984377594,510.3008858897744 1073,505 1061.12984377594,499.6991141102256" fill="none" stroke="black" stroke-width="2"/>
+<rect x="823.25" y="521" width="173.5" height="24" fill="white"/>
+<text x="910.0" y="539.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">200 · Konfiguration</text>
+<polyline points="1073,550 747,550" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="758.87015622406,544.6991141102255 747,550 758.87015622406,555.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="747,570 812,570 812,602 747,602" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,596.6991141102255 747,602 758.87015622406,607.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="824" y="563" width="289.5" height="23" fill="white"/>
+<text x="827" y="580.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">Lauf anlegen und in H2 speichern</text>
+<rect x="864.76171875" y="616" width="370.4765625" height="24" fill="white"/>
+<text x="1050.0" y="634.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">POST /internal/analyses · Analyseauftrag</text>
+<polyline points="747,645 1353,645" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1341.12984377594,650.3008858897745 1353,645 1341.12984377594,639.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<rect x="986.2578125" y="661" width="127.484375" height="24" fill="white"/>
+<text x="1050.0" y="679.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">202 Accepted</text>
+<polyline points="1353,690 747,690" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="758.87015622406,684.6991141102255 747,690 758.87015622406,695.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="381.7578125" y="706" width="346.484375" height="24" fill="white"/>
+<text x="555.0" y="724.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">202 · AnalysisResponse mit analysisId</text>
+<polyline points="733,735 377,735" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="388.87015622406,729.6991141102255 377,735 388.87015622406,740.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="134.0" y="756" width="195.0" height="24" fill="white"/>
+<text x="231.5" y="774.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">Analyselauf anzeigen</text>
+<polyline points="363,785 100,785" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="111.87015622406001,779.6991141102255 100,785 111.87015622406001,790.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="275,835 2220,835 2220,1690 275,1690 275,835" fill="none" stroke="black" stroke-width="2"/>
+<rect x="275" y="835" width="65" height="36" fill="white" stroke="black" stroke-width="2"/>
+<rect x="287" y="840" width="38.5" height="25" fill="white"/>
+<text x="290" y="859.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="start">par</text>
+<rect x="352" y="843" width="453.96875" height="26" fill="white"/>
+<text x="355" y="863.04" font-family="Arial, sans-serif" font-size="22" font-weight="700" text-anchor="start">Asynchrone Verarbeitung der Analysekette</text>
+<rect x="1353" y="905" width="14" height="120" fill="white" stroke="black" stroke-width="2"/>
+<rect x="903.75390625" y="886" width="292.4921875" height="24" fill="white"/>
+<text x="1050.0" y="904.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Status: FLUID = RUNNING</text>
+<polyline points="1353,915 747,915" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,909.6991141102255 747,915 758.87015622406,920.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1375" y="933" width="168.0" height="22" fill="white"/>
+<text x="1378" y="949.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Konfiguration prüfen</text>
+<rect x="882.0078125" y="956" width="335.984375" height="24" fill="white"/>
+<text x="1050.0" y="974.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Ergebnis: FLUID = READY / OK</text>
+<polyline points="1353,985 747,985" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,979.6991141102255 747,985 758.87015622406,990.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1390.76171875" y="998" width="198.4765625" height="24" fill="white"/>
+<text x="1490.0" y="1016.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">POST Analyseauftrag</text>
+<polyline points="1367,1027 1613,1027" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1601.12984377594,1032.3008858897745 1613,1027 1601.12984377594,1021.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1613" y="1050" width="14" height="120" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1014.76171875" y="1031" width="330.4765625" height="24" fill="white"/>
+<text x="1180.0" y="1049.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Status: THERMAL = RUNNING</text>
+<polyline points="1613,1060 747,1060" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,1054.6991141102255 747,1060 758.87015622406,1065.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1635" y="1078" width="168.0" height="22" fill="white"/>
+<text x="1638" y="1094.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Konfiguration prüfen</text>
+<rect x="993.015625" y="1101" width="373.96875" height="24" fill="white"/>
+<text x="1180.0" y="1119.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Ergebnis: THERMAL = READY / OK</text>
+<polyline points="1613,1130 747,1130" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,1124.6991141102255 747,1130 758.87015622406,1135.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1650.76171875" y="1143" width="198.4765625" height="24" fill="white"/>
+<text x="1750.0" y="1161.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">POST Analyseauftrag</text>
+<polyline points="1627,1172 1873,1172" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="1861.12984377594,1177.3008858897745 1873,1172 1861.12984377594,1166.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1873" y="1195" width="14" height="120" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1130.7578125" y="1176" width="358.484375" height="24" fill="white"/>
+<text x="1310.0" y="1194.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Status: ELECTRICAL = RUNNING</text>
+<polyline points="1873,1205 747,1205" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,1199.6991141102255 747,1205 758.87015622406,1210.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1895" y="1223" width="168.0" height="22" fill="white"/>
+<text x="1898" y="1239.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Konfiguration prüfen</text>
+<rect x="1109.01171875" y="1246" width="401.9765625" height="24" fill="white"/>
+<text x="1310.0" y="1264.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Ergebnis: ELECTRICAL = READY / OK</text>
+<polyline points="1873,1275 747,1275" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,1269.6991141102255 747,1275 758.87015622406,1280.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1910.76171875" y="1288" width="198.4765625" height="24" fill="white"/>
+<text x="2010.0" y="1306.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">POST Analyseauftrag</text>
+<polyline points="1887,1317 2133,1317" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="2121.12984377594,1322.3008858897745 2133,1317 2121.12984377594,1311.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<rect x="2133" y="1340" width="14" height="120" fill="white" stroke="black" stroke-width="2"/>
+<rect x="1206.7578125" y="1321" width="466.484375" height="24" fill="white"/>
+<text x="1440.0" y="1339.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Status: ENGINE_MANAGEMENT = RUNNING</text>
+<polyline points="2133,1350 747,1350" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,1344.6991141102255 747,1350 758.87015622406,1355.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="1887" y="1360" width="147.0" height="22" fill="white"/>
+<text x="1890" y="1376.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Konfiguration und</text>
+<rect x="1887" y="1383" width="177.984375" height="22" fill="white"/>
+<text x="1890" y="1399.76" font-family="Arial, sans-serif" font-size="18" font-weight="400" text-anchor="start">Vorergebnisse prüfen</text>
+<rect x="1185.01171875" y="1391" width="509.9765625" height="24" fill="white"/>
+<text x="1440.0" y="1409.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">PUT Ergebnis: ENGINE_MANAGEMENT = READY / OK</text>
+<polyline points="2133,1420 747,1420" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="758.87015622406,1414.6991141102255 747,1420 758.87015622406,1425.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="757" y="1488" width="732.5" height="24" fill="white"/>
+<text x="760" y="1506.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Management speichert jedes Update; nach dem letzten Erfolg: overallResult = OK.</text>
+<polyline points="275,1530 2220,1530" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<rect x="292" y="1543" width="775.0" height="25" fill="white"/>
+<text x="295" y="1562.22" font-family="Arial, sans-serif" font-size="21" font-weight="700" text-anchor="start">Parallel: Statusabfrage etwa jede Sekunde, solange PENDING oder RUNNING</text>
+<rect x="417.25390625" y="1581" width="275.4921875" height="24" fill="white"/>
+<text x="555.0" y="1599.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">GET /api/analyses/{analysisId}</text>
+<polyline points="377,1610 733,1610" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="721.12984377594,1615.3008858897745 733,1610 721.12984377594,1604.6991141102255" fill="none" stroke="black" stroke-width="2"/>
+<rect x="354.25" y="1641" width="401.5" height="24" fill="white"/>
+<text x="555.0" y="1659.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">200 · Status, Einzelergebnisse, overallResult</text>
+<polyline points="733,1670 377,1670" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="388.87015622406,1664.6991141102255 377,1670 388.87015622406,1675.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<rect x="126.25" y="1716" width="210.5" height="24" fill="white"/>
+<text x="231.5" y="1734.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="middle">Ergebnis anzeigen: OK</text>
+<polyline points="363,1745 100,1745" fill="none" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+<polyline points="111.87015622406001,1739.6991141102255 100,1745 111.87015622406001,1750.3008858897745" fill="none" stroke="black" stroke-width="2"/>
+<polyline points="60,1810 2200,1810" fill="none" stroke="black" stroke-width="2"/>
+<rect x="57" y="1835" width="374.984375" height="27" fill="white"/>
+<text x="60" y="1855.86" font-family="Arial, sans-serif" font-size="23" font-weight="700" text-anchor="start">Leseschlüssel und Abstraktionen</text>
+<rect x="57" y="1876" width="853.453125" height="24" fill="white"/>
+<text x="60" y="1894.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Durchgezogen: Aufruf · gestrichelt: Antwort · schmale Balken: ausgewählte Ausführungsphasen.</text>
+<rect x="57" y="1913" width="777.4765625" height="24" fill="white"/>
+<text x="60" y="1931.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Callbacks: PUT /internal/analyses/{analysisId}/algorithms/{algorithm}/status bzw. /result.</text>
+<rect x="1187" y="1876" width="685.484375" height="24" fill="white"/>
+<text x="1190" y="1894.4" font-family="Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start">Worker arbeiten mit @Async; RUNNING kann vor der 202-Antwort eintreffen.</text>
+<rect x="1187" y="1913" width="713.96875" height="23" fill="white"/>
+<text x="1190" y="1930.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">Weitergabe: POST /internal/analyses, jeweils mit Konfiguration und Vorergebnissen.</text>
+<rect x="57" y="1952" width="906.5" height="23" fill="white"/>
+<text x="60" y="1969.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">React im Browser und Nginx-Proxy sind hier zusammengefasst. Fehler und Retry sind separate Szenarien.</text>
+<rect x="1187" y="1952" width="647.5" height="23" fill="white"/>
+<text x="1190" y="1969.58" font-family="Arial, sans-serif" font-size="19" font-weight="400" text-anchor="start">202-Antworten der Folgeschritte und Callback-Antworten sind ausgeblendet.</text>
+</svg>

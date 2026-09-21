@@ -1,10 +1,11 @@
 \section{Verteilungssicht}
-Jeder Microservice wird als eigener Docker-Container betrieben. Die Container kommunizieren über Service-Namen im gemeinsamen Docker-Compose-Netzwerk. Dadurch müssen keine IP-Adressen im Source Code fest verdrahtet werden.
+Die sechs Backend-Microservices und das Frontend (web-ui) werden in insgesamt sieben Docker-Containern betrieben. Die Tabelle nennt die Backend-Ports (jeweils Host = Container) bzw. die Portabbildung des Frontends. Die Container kommunizieren über Service-Namen im gemeinsamen Docker-Compose-Netzwerk. Dadurch müssen keine IP-Adressen im Source Code fest verdrahtet werden.
 
 \begin{tabularx}{\textwidth}{L{6.8cm}L{2.0cm}Y}
 \toprule
 \textbf{Container} & \textbf{Port} & \textbf{Zustand} \\
 \midrule
+\makecell[l]{web-ui (Nginx)} & 3000 $\to$ 80 & stateless \\
 \makecell[l]{configuration-service} & 8081 & persistentes eigenes Volume \\
 \makecell[l]{analysis-management-service} & 8082 & persistentes eigenes Volume \\
 \makecell[l]{fluid-analysis-service} & 8083 & stateless \\
@@ -13,6 +14,12 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 \makecell[l]{engine-management-analysis-service} & 8086 & stateless \\
 \bottomrule
 \end{tabularx}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{../diagrams/Verteilungssicht.jpeg}
+  \caption{Verteilungssicht: Container, Ports und Docker-Compose-Netzwerk.}
+\end{figure}
 
 \subsection{Deployment-Prinzipien}
 \begin{itemize}
@@ -23,10 +30,14 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
   \item Zwei Varianten im Repository: veröffentlichte Images und lokaler Build aus dem Source Code.
 \end{itemize}
 
+\newpage
+
 \section{Querschnittliche Konzepte}
 \subsection{Status- und Ergebnismodell}
 
-\vfill
+Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen. Es wird \code{FAILED}, sobald ein relevanter Algorithmus fehlschlägt, und \code{OK}, sobald alle vier Algorithmen erfolgreich abgeschlossen sind.
+
+\vspace{1cm}
 \begin{center}
 \begin{tikzpicture}[
   node distance=12mm,
@@ -43,12 +54,10 @@ Jeder Microservice wird als eigener Docker-Container betrieben. Die Container ko
 \draw[-{Latex},thick] (r) -- (f);
 \end{tikzpicture}
 \end{center}
-\vfill
-
-Resultate sind \code{OK} oder \code{FAILED}. Das Overall Result bleibt offen, solange noch Schritte ausstehen. Es wird \code{FAILED}, sobald ein relevanter Algorithmus fehlschlägt, und \code{OK}, sobald alle vier Algorithmen erfolgreich abgeschlossen sind.
+\vspace{0.5cm}
 
 \subsection{Resilience}
-Resilience4j implementiert den Circuit Breaker für ausgehende Service-Aufrufe. Das Zustandsmodell folgt \emph{Closed - Open - Half-Open}. Im normalen Zustand werden Aufrufe zugelassen. Nach ausreichenden Fehlern öffnet der Breaker und blockiert weitere Aufrufe. Nach einer Wartezeit werden begrenzte Testaufrufe zugelassen.
+Resilience4j implementiert den Circuit Breaker für ausgehende Aufrufe zwischen Services \cite{richardson2018patterns}. Das Zustandsmodell folgt \emph{Closed -- Open -- Half-Open}. Im normalen Zustand werden Aufrufe zugelassen. Nach ausreichenden Fehlern öffnet der Breaker und blockiert weitere Aufrufe. Nach einer Wartezeit werden begrenzte Testaufrufe zugelassen.
 
 \subsection{Persistenz und Datenhoheit}
 Nur Configuration Management und Analysis Management besitzen langfristigen Zustand. Die Analyse-Services sind bewusst stateless. Damit bleiben fachliche Datenhoheit und Bounded-Context-Grenzen klar erkennbar.
@@ -80,6 +89,8 @@ Nur Configuration Management und Analysis Management besitzen langfristigen Zust
 \textbf{Entscheidung:} Configuration Management und Analysis Management besitzen getrennte Daten. Analyse-Services bleiben stateless.\\
 \textbf{Begründung:} Die Kopplung zwischen Bounded Contexts wird reduziert; eine gemeinsame Datenbank wird nicht als Integrationsmechanismus verwendet.
 
+\newpage
+
 \section{Qualitätsanforderungen und Architecture Smells}
 \subsection{Priorisierte Probleme und Gegenma\ss{}nahmen}
 \begin{tabularx}{\textwidth}{L{1.2cm}L{5.0cm}Y}
@@ -95,6 +106,12 @@ Nur Configuration Management und Analysis Management besitzen langfristigen Zust
 
 Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose-DNS und verbessert \emph{Insufficient Monitoring} durch ein explizites Statusmodell und die UI-Sicht auf laufende Analysen. Für einen produktiven Betrieb bleiben zentralisiertes Logging, verteiltes Tracing, Authentisierung/Autorisierung, API-Versionierung und ein dedizierter Observability-Stack als Ausbaustufen offen.
 
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{../diagrams/Bausteinsicht-monitoring.png}
+  \caption{Bausteinsicht mit Monitoring-Sicht auf die laufenden Analysen.}
+\end{figure}
+
 \subsection{Qualitätsszenarien}
 \begin{itemize}
   \item \textbf{Ausfall:} Thermal Analysis ist nicht erreichbar. Der Aufrufer bricht kontrolliert ab, markiert den Schritt als \code{FAILED} und die übrige Anwendung bleibt bedienbar.
@@ -102,3 +119,28 @@ Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose
   \item \textbf{Nachvollziehbarkeit:} Zu jeder Analyse-ID sind Status und Resultate aller vier Algorithmen abrufbar.
   \item \textbf{Deployment:} Ein einzelner Analyse-Service kann unabhängig neu gebaut oder neu gestartet werden.
 \end{itemize}
+
+
+\subsection{Nachweise durch vorhandene Unit-Tests}
+Die folgenden Tests belegen abgegrenzte Verhaltensweisen auf Unit-Ebene. C bezeichnet
+\code{ConfigurationApplicationServiceTest}, A bezeichnet \code{AnalysisRunTest}.
+Beide Klassen liegen im jeweiligen Service unter \path{src/test/java}.
+
+\begin{tabularx}{\textwidth}{L{4.1cm}Y}
+\toprule
+\textbf{Anforderung / Kriterium} & \textbf{Vorhandener Unit-Test und geprüfter Umfang} \\
+\midrule
+Konfiguration anlegen & C: \path{createGeneratesIdAndPersistsConfiguration}. Prüft ID-Präfix \code{C-}, alle fünf Konfigurationsfelder und den Aufruf von \code{repository.save}. Das Repository ist gemockt. \\
+Initialer Analysezustand & A: \path{newAnalysisStartsWithFourPendingAlgorithms}. Vier Algorithmen sind im neu erzeugten Domain-Objekt \code{PENDING}; das Gesamtergebnis ist \code{null}. \\
+Fehler im Gesamtergebnis & A: \path{failedAlgorithmMakesOverallResultFailed}. Ein auf \code{FAILED} gesetzter Algorithmus führt nach Neuberechnung zu \code{overallResult = FAILED}. \\
+Erfolgreiches Gesamtergebnis & A: \path{fourSuccessfulAlgorithmsMakeOverallResultOk}. Vier auf \code{READY/OK} gesetzte Ergebnisse führen zu \code{overallResult = OK}. \\
+Zustand beim Retry bereinigen & A: \path{retryRunningStateClearsOldFailedResult}. Der Wechsel von \code{FAILED} zu \code{RUNNING} löscht das alte Fehlerergebnis. \\
+\bottomrule
+\end{tabularx}
+
+Diese Tests weisen weder echte H2-Persistenz über Container-Neustarts noch REST-Kommunikation,
+Circuit-Breaker-Verhalten oder die vollständige Retry-Kette nach. Dafür sind ergänzende
+Integrationsprüfungen bzw. die Demo notwendig. Der Initialzustandstest betrifft das Domain-Objekt;
+der Start-Anwendungsdienst setzt Fluid vor dem externen Aufruf auf \code{RUNNING}.
+
+\newpage

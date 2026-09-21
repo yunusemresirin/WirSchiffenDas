@@ -1,0 +1,161 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated as
+% required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+\datalist[entry]{none/global//global/global}
+  \entry{fallstudie2026}{misc}{}
+    \field{labeltitlesource}{title}
+    \field{howpublished}{Semesterprojekt Service-basierte
+  Komponenten-Architekturen (SEKA), Hochschule Bonn-Rhein-Sieg}
+    \field{title}{Fallstudie WirSchiffenDas: Engine Quality Analysis}
+    \field{year}{2026}
+  \endentry
+
+  \entry{evans2003ddd}{book}{}
+    \name{author}{1}{}{%
+      {{hash=EE}{%
+         family={Evans},
+         familyi={E\bibinitperiod},
+         given={Eric},
+         giveni={E\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Addison-Wesley}%
+    }
+    \strng{namehash}{EE1}
+    \strng{fullhash}{EE1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{title}{Domain-Driven Design: Tackling Complexity in the Heart of
+  Software}
+    \list{location}{1}{%
+      {Boston}%
+    }
+    \field{year}{2003}
+  \endentry
+
+  \entry{richardson2018patterns}{book}{}
+    \name{author}{1}{}{%
+      {{hash=RC}{%
+         family={Richardson},
+         familyi={R\bibinitperiod},
+         given={Chris},
+         giveni={C\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Manning}%
+    }
+    \strng{namehash}{RC1}
+    \strng{fullhash}{RC1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{title}{Microservices Patterns: With Examples in Java}
+    \list{location}{1}{%
+      {Shelter Island}%
+    }
+    \field{year}{2018}
+  \endentry
+
+  \entry{uebungsblaetter2026}{misc}{}
+    \field{labeltitlesource}{title}
+    \field{howpublished}{Lehrveranstaltung Service-basierte
+  Komponenten-Architekturen (SEKA), Hochschule Bonn-Rhein-Sieg}
+    \field{title}{Uebungsblaetter 4--6 und Semesterprojekt-Hinweise}
+    \field{year}{2026}
+  \endentry
+
+  \entry{schirgi2021quality}{misc}{}
+    \name{author}{2}{}{%
+      {{hash=SB}{%
+         family={Schirgi},
+         familyi={S\bibinitperiod},
+         given={B.},
+         giveni={B\bibinitperiod},
+      }}%
+      {{hash=BE}{%
+         family={Brenner},
+         familyi={B\bibinitperiod},
+         given={E.},
+         giveni={E\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{SBBE1}
+    \strng{fullhash}{SBBE1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{title}{Quality Assurance for Microservice Architectures}
+    \field{year}{2021}
+  \endentry
+
+  \entry{garriga2018taxonomy}{inproceedings}{}
+    \name{author}{1}{}{%
+      {{hash=GM}{%
+         family={Garriga},
+         familyi={G\bibinitperiod},
+         given={Martin},
+         giveni={M\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Springer}%
+    }
+    \strng{namehash}{GM1}
+    \strng{fullhash}{GM1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{booktitle}{Service-Oriented Computing -- ICSOC 2017 Workshops}
+    \field{series}{Lecture Notes in Computer Science}
+    \field{title}{Towards a Taxonomy of Microservices Architectures}
+    \list{location}{1}{%
+      {Cham}%
+    }
+    \field{year}{2018}
+  \endentry
+
+  \entry{starke2017arc42}{book}{}
+    \name{author}{2}{}{%
+      {{hash=SG}{%
+         family={Starke},
+         familyi={S\bibinitperiod},
+         given={Gernot},
+         giveni={G\bibinitperiod},
+      }}%
+      {{hash=HP}{%
+         family={Hruschka},
+         familyi={H\bibinitperiod},
+         given={Peter},
+         giveni={P\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Carl Hanser Verlag}%
+    }
+    \strng{namehash}{SGHP1}
+    \strng{fullhash}{SGHP1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{title}{arc42 in Aktion: Praktische Tipps zur
+  Architekturdokumentation}
+    \list{location}{1}{%
+      {M{\"u}nchen}%
+    }
+    \field{year}{2017}
+  \endentry
+\enddatalist
+\endinput
