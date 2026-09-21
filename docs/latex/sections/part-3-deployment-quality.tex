@@ -1,10 +1,11 @@
 \section{Verteilungssicht}
-Jeder Microservice wird als eigener Docker-Container betrieben. Die Container kommunizieren über Service-Namen im gemeinsamen Docker-Compose-Netzwerk. Dadurch müssen keine IP-Adressen im Source Code fest verdrahtet werden.
+Die sechs Backend-Microservices und das Frontend (web-ui) werden in insgesamt sieben Docker-Containern betrieben. Die Tabelle nennt die Backend-Ports (jeweils Host = Container) bzw. die Portabbildung des Frontends. Die Container kommunizieren über Service-Namen im gemeinsamen Docker-Compose-Netzwerk. Dadurch müssen keine IP-Adressen im Source Code fest verdrahtet werden.
 
 \begin{tabularx}{\textwidth}{L{6.8cm}L{2.0cm}Y}
 \toprule
 \textbf{Container} & \textbf{Port} & \textbf{Zustand} \\
 \midrule
+\makecell[l]{web-ui (Nginx)} & 3000 $\to$ 80 & stateless \\
 \makecell[l]{configuration-service} & 8081 & persistentes eigenes Volume \\
 \makecell[l]{analysis-management-service} & 8082 & persistentes eigenes Volume \\
 \makecell[l]{fluid-analysis-service} & 8083 & stateless \\
@@ -118,5 +119,28 @@ Zusätzlich adressiert die Architektur \emph{Hard-Coded Endpoints} durch Compose
   \item \textbf{Nachvollziehbarkeit:} Zu jeder Analyse-ID sind Status und Resultate aller vier Algorithmen abrufbar.
   \item \textbf{Deployment:} Ein einzelner Analyse-Service kann unabhängig neu gebaut oder neu gestartet werden.
 \end{itemize}
+
+
+\subsection{Nachweise durch vorhandene Unit-Tests}
+Die folgenden Tests belegen abgegrenzte Verhaltensweisen auf Unit-Ebene. C bezeichnet
+\code{ConfigurationApplicationServiceTest}, A bezeichnet \code{AnalysisRunTest}.
+Beide Klassen liegen im jeweiligen Service unter \path{src/test/java}.
+
+\begin{tabularx}{\textwidth}{L{4.1cm}Y}
+\toprule
+\textbf{Anforderung / Kriterium} & \textbf{Vorhandener Unit-Test und geprüfter Umfang} \\
+\midrule
+Konfiguration anlegen & C: \path{createGeneratesIdAndPersistsConfiguration}. Prüft ID-Präfix \code{C-}, alle fünf Konfigurationsfelder und den Aufruf von \code{repository.save}. Das Repository ist gemockt. \\
+Initialer Analysezustand & A: \path{newAnalysisStartsWithFourPendingAlgorithms}. Vier Algorithmen sind im neu erzeugten Domain-Objekt \code{PENDING}; das Gesamtergebnis ist \code{null}. \\
+Fehler im Gesamtergebnis & A: \path{failedAlgorithmMakesOverallResultFailed}. Ein auf \code{FAILED} gesetzter Algorithmus führt nach Neuberechnung zu \code{overallResult = FAILED}. \\
+Erfolgreiches Gesamtergebnis & A: \path{fourSuccessfulAlgorithmsMakeOverallResultOk}. Vier auf \code{READY/OK} gesetzte Ergebnisse führen zu \code{overallResult = OK}. \\
+Zustand beim Retry bereinigen & A: \path{retryRunningStateClearsOldFailedResult}. Der Wechsel von \code{FAILED} zu \code{RUNNING} löscht das alte Fehlerergebnis. \\
+\bottomrule
+\end{tabularx}
+
+Diese Tests weisen weder echte H2-Persistenz über Container-Neustarts noch REST-Kommunikation,
+Circuit-Breaker-Verhalten oder die vollständige Retry-Kette nach. Dafür sind ergänzende
+Integrationsprüfungen bzw. die Demo notwendig. Der Initialzustandstest betrifft das Domain-Objekt;
+der Start-Anwendungsdienst setzt Fluid vor dem externen Aufruf auf \code{RUNNING}.
 
 \newpage

@@ -64,7 +64,7 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]
       \end{itemize}
       \vspace{0.2cm}
       \begin{block}{Nachweis}
-        \small 6 $\times$ \code{Dockerfile} -- eines pro Service.
+        \small 6 Backend-Dockerfiles; zusätzlich frontend/Dockerfile.
       \end{block}
     \end{column}
   \end{columns}
@@ -78,13 +78,13 @@ ENTRYPOINT ["java", "-jar", "/app/app.jar"]
       \begin{lstlisting}[style=yaml]
 services:
   configuration-service:
-    image: ysirin2s/seka-wirschaffendas:configuration-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:configuration-service-v${VERSION}
     ports:
       - "8081:8081"
     volumes:
       - configuration-data:/app/data
   analysis-management-service:
-    image: ysirin2s/seka-wirschaffendas:analysis-management-service-v${VERSION}
+    image: ysirin2s/seka-wirschiffendas:analysis-management-service-v${VERSION}
     ports:
       - "8082:8082"
     environment:
@@ -98,8 +98,8 @@ services:
     \begin{column}{0.42\textwidth}
       \textbf{Erläuterung}
       \begin{itemize}
-        \item Compose definiert alle sechs Services, Ports, Umgebungsvariablen und getrennte Volumes.
-        \item Services finden sich über \textbf{Service-Namen} im Netzwerk \code{wirschaffendas-network} -- keine fest verdrahteten IPs.
+        \item Compose definiert sechs Backend-Services und web-ui, Ports, Umgebungsvariablen und getrennte Volumes.
+        \item Services finden sich über \textbf{Service-Namen} im Netzwerk \code{wirschiffendas-network} -- keine fest verdrahteten IPs.
         \item \code{depends_on} steuert die Startreihenfolge.
       \end{itemize}
       \begin{block}{Start}

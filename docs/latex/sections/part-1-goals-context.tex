@@ -34,7 +34,6 @@ Testbarkeit & Happy Path, Fehlerfall und Retry sind automatisiert sowie über di
 \newpage
 
 \section{Randbedingungen}
-\subsection{Technische Randbedingungen}
 \begin{tabularx}{\textwidth}{L{4.2cm}Y}
 \toprule
 \textbf{Technologie} & \textbf{Verwendung} \\
@@ -49,13 +48,11 @@ PlantUML / TikZ & Architekturdiagramme und Dokumentation. \\
 \bottomrule
 \end{tabularx}
 
-\subsection{Projektgrenzen}
 Nicht Bestandteil dieses Proof-of-Concepts sind eine reale physikalische Motorsimulation, die vollständige Migration der bestehenden Unternehmenssoftware, Kubernetes oder Cloud-Deployment sowie eine Camunda- oder MCP-Orchestration des Order-Fulfillment-Prozesses. Kafka wird im Kernumfang nicht verwendet.
 
 Die vier Analyse-Services arbeiten daher mit vereinfachten, deterministischen Prüfregeln. Im Mittelpunkt stehen die Architekturentscheidungen, Servicegrenzen, Datenhoheit, Resilience und Nachvollziehbarkeit der Verarbeitung.
 
 \section{Kontextabgrenzung}
-\subsection{Fachlicher Kontext}
 Der primäre Akteur ist der \textbf{Ingenieur}. Im Prüfungsszenario übernimmt diese Rolle der Demo-Operator. Er erstellt oder lädt eine Motorkonfiguration, startet die Qualitätsanalyse, beobachtet den Bearbeitungsstatus und stö\ss{}t bei Bedarf einen Retry an.
 
 \begin{figure}[h]
