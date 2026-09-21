@@ -146,16 +146,42 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
   const timeout = window.setTimeout(() => controller.abort(), 1500);
 
   try {
-    const response = await fetch(`/monitor/${key}/actuator/health`, {
-      signal: controller.signal,
-      cache: 'no-store',
-    });
+    const response = await fetch(
+      `/monitor/${key}/actuator/health?_=${Date.now()}`,
+      {
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      },
+    );
+
+    // 502/504 stammen beim Docker-Setup vom Nginx-Proxy, wenn der Zielcontainer
+    // nicht erreichbar ist. Sie dürfen nicht als Antwort des Services gewertet werden.
+    if (response.status === 502 || response.status === 504) {
+      return {
+        key,
+        reachable: false,
+        actuatorStatus: 'UNREACHABLE',
+        circuitBreaker: null,
+        checkedAt: new Date().toISOString(),
+      };
+    }
 
     const text = await response.text();
-    const payload = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+    let payload: Record<string, unknown> = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text) as Record<string, unknown>;
+      } catch {
+        payload = {};
+      }
+    }
 
-    // Ein OPEN Circuit Breaker setzt den Actuator-Status absichtlich auf DOWN/503.
-    // Eine HTTP-Antwort beweist dennoch, dass der Service selbst erreichbar ist.
+    // Ein OPEN Circuit Breaker kann den Actuator-Status absichtlich auf DOWN/503
+    // setzen. Solange die Antwort vom Zielservice kommt, ist der Container erreichbar.
     return {
       key,
       reachable: true,
