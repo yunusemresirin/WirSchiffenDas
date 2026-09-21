@@ -23,10 +23,19 @@ public class AnalysisWorker {
     public void execute(AnalysisCommand command) {
         managementClient.reportStatus(command.analysisId(), ALGORITHM, "RUNNING", null);
         if (!pause(command.analysisId())) return;
-        boolean ok = valid(command.configuration().get("electricalSystem"));
+        String electricalSystem = command.configuration().get("electricalSystem");
+        boolean ok = valid(electricalSystem);
         String result = ok ? "OK" : "FAILED";
-        managementClient.reportResult(command.analysisId(), ALGORITHM, ok ? "READY" : "FAILED", result, null);
-        // Nur bei Erfolg den nächsten Algorithmus der Kette starten
+        String message = ok
+                ? null
+                : "Invalid electrical configuration: electricalSystem must be STANDARD, PREMIUM or ADVANCED";
+        managementClient.reportResult(
+                command.analysisId(),
+                ALGORITHM,
+                ok ? "READY" : "FAILED",
+                result,
+                message);
+        // Ungültige Konfiguration wird nicht weiterverarbeitet.
         if (ok) nextServiceClient.startNext(command, result);
     }
 
@@ -43,7 +52,12 @@ public class AnalysisWorker {
     }
 
     /**
-     * Prüft, ob ein Konfigurationswert gesetzt und nicht als INVALID markiert ist.
+     * Nur die kontrollierten fachlich gültigen Demo-Varianten werden verarbeitet.
+     * INVALID bleibt als absichtlicher Fehlerfall für den Demonstrator verfügbar.
      */
-    private boolean valid(String value) { return value != null && !"INVALID".equalsIgnoreCase(value); }
+    private boolean valid(String value) {
+        return "STANDARD".equalsIgnoreCase(value)
+                || "PREMIUM".equalsIgnoreCase(value)
+                || "ADVANCED".equalsIgnoreCase(value);
+    }
 }
