@@ -52,4 +52,16 @@ public class AnalysisManagementClient {
                 .toBodilessEntity(); // Antwort ohne Body verarbeiten
     }
 
+    /**
+     * Fordert Analysis Management auf, durch Nichterreichbarkeit fehlgeschlagene
+     * Läufe ab diesem Algorithmus automatisch fortzusetzen.
+     */
+    public void requestRecovery(String algorithm) {
+        client
+                .post()
+                .uri("/internal/analyses/recover/{algorithm}", algorithm)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
 }
