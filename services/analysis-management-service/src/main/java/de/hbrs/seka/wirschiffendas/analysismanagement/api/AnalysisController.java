@@ -1,6 +1,7 @@
 package de.hbrs.seka.wirschiffendas.analysismanagement.api;
 
 import de.hbrs.seka.wirschiffendas.analysismanagement.application.AnalysisApplicationService;
+import de.hbrs.seka.wirschiffendas.analysismanagement.application.RecoveryResult;
 import de.hbrs.seka.wirschiffendas.analysismanagement.domain.AlgorithmName;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -54,9 +55,9 @@ public class AnalysisController {
      * alle durch Nichterreichbarkeit fehlgeschlagenen Läufe an diesem Algorithmus fort.
      */
     @PostMapping("/internal/analyses/recover/{algorithm}")
-    public ResponseEntity<Void> recover(@PathVariable AlgorithmName algorithm) {
-        service.resumeRecoverableFailures(algorithm);
-        return ResponseEntity.accepted().build();
+    public ResponseEntity<RecoveryResult> recover(@PathVariable AlgorithmName algorithm) {
+        RecoveryResult result = service.resumeRecoverableFailures(algorithm);
+        return ResponseEntity.accepted().body(result);
     }
 
     /**
