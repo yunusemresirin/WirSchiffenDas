@@ -105,47 +105,57 @@ const breakerStates = new Set<CircuitBreakerState>([
 ]);
 
 /**
- * Sammelt Circuit-Breaker-Snapshots unter ihrem Actuator-Namen.
+ * Liest die benannten Circuit Breaker aus dem dedizierten Actuator-Endpunkt.
  */
-function findCircuitBreakers(
-  value: unknown,
-  result: Record<string, CircuitBreakerSnapshot> = {},
-): Record<string, CircuitBreakerSnapshot> {
-  if (!value || typeof value !== 'object') {
-    return result;
-  }
+async function fetchCircuitBreakers(
+  key: ServiceKey,
+  signal: AbortSignal,
+): Promise<Record<string, CircuitBreakerSnapshot>> {
+  try {
+    const response = await fetch(
+      `/monitor/${key}/actuator/circuitbreakers?_=${Date.now()}`,
+      { signal, cache: 'no-store' },
+    );
+    if (!response.ok) return {};
 
-  const record = value as Record<string, unknown>;
-  for (const [key, child] of Object.entries(record)) {
-    if (child && typeof child === 'object') {
-      const childRecord = child as Record<string, unknown>;
-      const state = childRecord.state;
+    const payload = (await response.json()) as Record<string, unknown>;
+    const rawBreakers = payload.circuitBreakers;
+    if (!rawBreakers || typeof rawBreakers !== 'object') return {};
+
+    const result: Record<string, CircuitBreakerSnapshot> = {};
+    for (const [name, value] of Object.entries(
+      rawBreakers as Record<string, unknown>,
+    )) {
+      if (!value || typeof value !== 'object') continue;
+      const record = value as Record<string, unknown>;
+      const state = record.state;
       if (
-        typeof state === 'string' &&
-        breakerStates.has(state as CircuitBreakerState)
+        typeof state !== 'string' ||
+        !breakerStates.has(state as CircuitBreakerState)
       ) {
-        result[key] = {
-          state: state as CircuitBreakerState,
-          failureRate: childRecord.failureRate as string | number | undefined,
-          bufferedCalls:
-            typeof childRecord.bufferedCalls === 'number'
-              ? childRecord.bufferedCalls
-              : undefined,
-          failedCalls:
-            typeof childRecord.failedCalls === 'number'
-              ? childRecord.failedCalls
-              : undefined,
-          notPermittedCalls:
-            typeof childRecord.notPermittedCalls === 'number'
-              ? childRecord.notPermittedCalls
-              : undefined,
-        };
+        continue;
       }
-      findCircuitBreakers(child, result);
+      result[name] = {
+        state: state as CircuitBreakerState,
+        failureRate: record.failureRate as string | number | undefined,
+        bufferedCalls:
+          typeof record.bufferedCalls === 'number'
+            ? record.bufferedCalls
+            : undefined,
+        failedCalls:
+          typeof record.failedCalls === 'number'
+            ? record.failedCalls
+            : undefined,
+        notPermittedCalls:
+          typeof record.notPermittedCalls === 'number'
+            ? record.notPermittedCalls
+            : undefined,
+      };
     }
+    return result;
+  } catch {
+    return {};
   }
-
-  return result;
 }
 
 /**
@@ -193,7 +203,7 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
       }
     }
 
-    const circuitBreakers = findCircuitBreakers(payload);
+    const circuitBreakers = await fetchCircuitBreakers(key, controller.signal);
     const circuitBreaker = Object.values(circuitBreakers)[0] ?? null;
 
     // Ein OPEN Circuit Breaker kann den Actuator-Status absichtlich auf DOWN/503
