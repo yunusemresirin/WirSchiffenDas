@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AnalysisWorker {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnalysisWorker.class);
 
     private static final String ALGORITHM = "FLUID";
 
@@ -27,6 +28,7 @@ public class AnalysisWorker {
      */
     @Async
     public void execute(AnalysisCommand command) {
+        log.info("Starting FLUID analysis {}", command.analysisId());
         managementClient.reportStatus(command.analysisId(), ALGORITHM, "RUNNING", null);
 
         if (!pause(command.analysisId())) {
@@ -79,3 +81,4 @@ public class AnalysisWorker {
                 || "ADVANCED".equalsIgnoreCase(value);
     }
 }
+

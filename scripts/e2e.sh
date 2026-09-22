@@ -17,7 +17,7 @@ wait_for_health() {
   local name="$2"
   echo "Warte auf $name ..."
   for _ in $(seq 1 40); do
-    if curl -fsS "$url/actuator/health" | jq -e '.status == "UP"' >/dev/null 2>&1; then
+    if curl -fsS "$url/actuator/health/liveness" | jq -e '.status == "UP"' >/dev/null 2>&1; then
       echo "$name ist UP"
       return 0
     fi
@@ -28,12 +28,13 @@ wait_for_health() {
 }
 
 create_configuration() {
+  local cooling_system="${1:-STANDARD}"
   curl -fsS -X POST "$CONFIG_URL/api/configurations" \
     -H 'Content-Type: application/json' \
     -d '{
       "oilSystem": "STANDARD",
       "fuelSystem": "PREMIUM",
-      "coolingSystem": "STANDARD",
+      "coolingSystem": "'"$cooling_system"'",
       "electricalSystem": "PREMIUM",
       "engineManagementSystem": "ADVANCED"
     }' | jq -r '.configurationId'
@@ -90,6 +91,20 @@ wait_for_algorithm_status() {
   return 1
 }
 
+# Health darf wegen OPEN mit HTTP 503 antworten; den JSON-Body trotzdem lesen.
+wait_for_breaker() {
+  local expected="$1"
+  for _ in $(seq 1 "$TIMEOUT_SECONDS"); do
+    if curl -sS --max-time 3 http://localhost:8083/actuator/health |
+      jq -e --arg state "$expected" '.. | objects | select(.state? == $state)' >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Fluid → Thermal erreichte $expected nicht." >&2
+  return 1
+}
+
 cleanup() {
   docker compose start thermal-analysis-service >/dev/null 2>&1 || true
 }
@@ -129,6 +144,7 @@ if [[ "$(jq -r '.overallResult' <<<"$failed_body")" != "FAILED" ]]; then
   exit 1
 fi
 
+wait_for_breaker OPEN
 echo "Thermal-Ausfall wurde korrekt erkannt."
 
 docker compose start thermal-analysis-service >/dev/null
@@ -143,11 +159,17 @@ if [[ "$ready_count" != "4" ]]; then
   exit 1
 fi
 
+wait_for_breaker CLOSED
+fluid_starts="$(docker compose logs --no-color fluid-analysis-service | grep -F -c "Starting FLUID analysis $analysis_id" || true)"
+if [[ "$fluid_starts" != "1" ]]; then
+  echo "Fluid muss genau einmal laufen, beobachtet: $fluid_starts" >&2
+  exit 1
+fi
 echo "Automatische Recovery erfolgreich: $analysis_id"
 
 echo
 echo "=== E2E-03 INVALID-Konfigurationsvariante wird fachlich abgelehnt ==="
-configuration_id="$(create_invalid_configuration)"
+configuration_id="$(create_configuration INVALID)"
 analysis_id="$(start_analysis "$configuration_id")"
 invalid_body="$(wait_for_algorithm_status "$analysis_id" "THERMAL" "FAILED")"
 
@@ -173,6 +195,16 @@ if [[ "$thermal_message" != *"Invalid thermal configuration"* ]]; then
   exit 1
 fi
 
+sleep 5
+invalid_body="$(get_analysis "$analysis_id")"
+if ! jq -e '.overallResult == "FAILED" and
+    ([.algorithms[] | select(.algorithm == "THERMAL" and .status == "FAILED")] | length == 1) and
+    ([.algorithms[] | select((.algorithm == "ELECTRICAL" or .algorithm == "ENGINE_MANAGEMENT") and .status == "PENDING")] | length == 2)' <<<"$invalid_body" >/dev/null; then
+  echo "Fachliches INVALID darf nicht automatisch fortgesetzt werden." >&2
+  exit 1
+fi
+
 echo "INVALID wurde korrekt im zuständigen Algorithmus erkannt und nicht weiterverarbeitet: $analysis_id"
 echo
 echo "Alle End-to-End-Tests erfolgreich."
+
