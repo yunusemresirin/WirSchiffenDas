@@ -82,5 +82,6 @@ export interface ServiceHealth {
   reachable: boolean;
   actuatorStatus: string;
   circuitBreaker: CircuitBreakerSnapshot | null;
+  circuitBreakers: Record<string, CircuitBreakerSnapshot>;
   checkedAt: string;
 }
