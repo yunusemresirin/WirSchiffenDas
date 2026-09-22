@@ -48,8 +48,9 @@ public class CircuitBreakerRecoveryProbe {
 
         if (recoveryNotificationPending && circuitBreaker.getState() == CircuitBreaker.State.CLOSED) {
             try {
-                managementClient.requestRecovery("ELECTRICAL");
-                recoveryNotificationPending = false;
+                AnalysisManagementClient.RecoveryResponse recovery =
+                        managementClient.requestRecovery("ELECTRICAL");
+                recoveryNotificationPending = recovery.remaining() > 0;
             } catch (RuntimeException ignored) {
                 // Analysis Management kann vorübergehend nicht erreichbar sein; beim nächsten Tick erneut versuchen.
             }
