@@ -105,39 +105,47 @@ const breakerStates = new Set<CircuitBreakerState>([
 ]);
 
 /**
- * Sucht rekursiv nach einem Circuit-Breaker-Snapshot in der Actuator-Antwort.
+ * Sammelt Circuit-Breaker-Snapshots unter ihrem Actuator-Namen.
  */
-function findCircuitBreaker(value: unknown): CircuitBreakerSnapshot | null {
+function findCircuitBreakers(
+  value: unknown,
+  result: Record<string, CircuitBreakerSnapshot> = {},
+): Record<string, CircuitBreakerSnapshot> {
   if (!value || typeof value !== 'object') {
-    return null;
+    return result;
   }
 
   const record = value as Record<string, unknown>;
-  const state = record.state;
-
-  if (typeof state === 'string' && breakerStates.has(state as CircuitBreakerState)) {
-    return {
-      state: state as CircuitBreakerState,
-      failureRate: record.failureRate as string | number | undefined,
-      bufferedCalls:
-        typeof record.bufferedCalls === 'number' ? record.bufferedCalls : undefined,
-      failedCalls:
-        typeof record.failedCalls === 'number' ? record.failedCalls : undefined,
-      notPermittedCalls:
-        typeof record.notPermittedCalls === 'number'
-          ? record.notPermittedCalls
-          : undefined,
-    };
-  }
-
-  for (const child of Object.values(record)) {
-    const result = findCircuitBreaker(child);
-    if (result) {
-      return result;
+  for (const [key, child] of Object.entries(record)) {
+    if (child && typeof child === 'object') {
+      const childRecord = child as Record<string, unknown>;
+      const state = childRecord.state;
+      if (
+        typeof state === 'string' &&
+        breakerStates.has(state as CircuitBreakerState)
+      ) {
+        result[key] = {
+          state: state as CircuitBreakerState,
+          failureRate: childRecord.failureRate as string | number | undefined,
+          bufferedCalls:
+            typeof childRecord.bufferedCalls === 'number'
+              ? childRecord.bufferedCalls
+              : undefined,
+          failedCalls:
+            typeof childRecord.failedCalls === 'number'
+              ? childRecord.failedCalls
+              : undefined,
+          notPermittedCalls:
+            typeof childRecord.notPermittedCalls === 'number'
+              ? childRecord.notPermittedCalls
+              : undefined,
+        };
+      }
+      findCircuitBreakers(child, result);
     }
   }
 
-  return null;
+  return result;
 }
 
 /**
@@ -170,6 +178,7 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
         reachable: false,
         actuatorStatus: 'UNREACHABLE',
         circuitBreaker: null,
+        circuitBreakers: {},
         checkedAt: new Date().toISOString(),
       };
     }
@@ -184,6 +193,9 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
       }
     }
 
+    const circuitBreakers = findCircuitBreakers(payload);
+    const circuitBreaker = Object.values(circuitBreakers)[0] ?? null;
+
     // Ein OPEN Circuit Breaker kann den Actuator-Status absichtlich auf DOWN/503
     // setzen. Solange die Antwort vom Zielservice kommt, ist der Container erreichbar.
     return {
@@ -195,7 +207,8 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
           : response.ok
             ? 'UP'
             : 'DOWN',
-      circuitBreaker: findCircuitBreaker(payload),
+      circuitBreaker,
+      circuitBreakers,
       checkedAt: new Date().toISOString(),
     };
   } catch {
@@ -204,6 +217,7 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
       reachable: false,
       actuatorStatus: 'UNREACHABLE',
       circuitBreaker: null,
+      circuitBreakers: {},
       checkedAt: new Date().toISOString(),
     };
   } finally {
