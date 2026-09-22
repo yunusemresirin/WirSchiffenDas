@@ -61,7 +61,7 @@ docker compose -f alternative_docker-compose.yml up --build -d
 COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
-Das Skript prüft zwei Szenarien.
+Das Skript prüft drei Szenarien.
 
 ### Szenario E2E-01 – Happy Path
 
@@ -70,14 +70,26 @@ Das Skript prüft zwei Szenarien.
 3. Auf Abschluss warten.
 4. Prüfen, dass `overallResult = OK` ist.
 
-### Szenario E2E-02 – Serviceausfall und Retry
+### Szenario E2E-02 – Serviceausfall und automatische Recovery
 
 1. `thermal-analysis-service` stoppen.
 2. Neue Analyse starten.
-3. Warten, bis `THERMAL = FAILED` gemeldet wird.
+3. Warten, bis `THERMAL = FAILED` gemeldet wird und der Fluid-Breaker den technischen Ausfall erkennt.
 4. Thermal Service wieder starten.
-5. Nur `THERMAL` über den Retry-Endpunkt erneut starten.
-6. Prüfen, dass die Choreographie ab Thermal fortgesetzt wird und am Ende `overallResult = OK` ist.
+5. **Keinen manuellen Retry auslösen.** Der Circuit Breaker prüft die Liveness automatisch und Analysis Management setzt den Lauf ab `THERMAL` fort.
+6. Prüfen, dass die Choreographie am Ende `overallResult = OK` erreicht und bereits erfolgreiche Vorgänger nicht erneut ausgeführt werden.
+
+Der Zustand `HALF_OPEN` ist ein Übergangszustand. Bei einem Polling-Intervall von zwei Sekunden und einer sofort erfolgreichen Probe kann er in der UI nur sehr kurz oder gar nicht sichtbar sein. Für den Nachweis sind deshalb vor allem `OPEN`, die automatische Recovery und das anschließende `CLOSED` relevant.
+
+### Szenario E2E-03 – fachlich ungültige Konfiguration
+
+1. Konfiguration mit `coolingSystem = INVALID` anlegen.
+2. Analyse starten.
+3. Prüfen, dass Fluid erfolgreich abgeschlossen wird und `THERMAL = FAILED` mit fachlicher Fehlermeldung endet.
+4. Prüfen, dass `ELECTRICAL` und `ENGINE_MANAGEMENT` nicht gestartet werden und `PENDING` bleiben.
+5. Prüfen, dass `overallResult = FAILED` ist.
+
+Die kontrollierten Demo-Varianten sind `STANDARD`, `PREMIUM`, `ADVANCED` und `INVALID`. `INVALID` darf gespeichert werden, wird aber erst im jeweils zuständigen Analyse-Worker fachlich abgelehnt.
 
 ## Manuelle Prüfungsdemo
 
