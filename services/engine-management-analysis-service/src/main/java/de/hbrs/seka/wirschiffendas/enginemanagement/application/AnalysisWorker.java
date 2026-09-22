@@ -33,8 +33,7 @@ public class AnalysisWorker {
         // Alle Vorgänger-Algorithmen müssen erfolgreich gewesen sein
         boolean previousOk = command.previousResults().stream().noneMatch(result -> "FAILED".equalsIgnoreCase(result.get("result")));
 
-        String engineManagementSystem = command.configuration().get("engineManagementSystem");
-        boolean configOk = valid(engineManagementSystem);
+        boolean configOk = validConfiguration(command);
 
         boolean ok = previousOk && configOk;
         String message = ok
@@ -76,6 +75,10 @@ public class AnalysisWorker {
      * Nur die kontrollierten fachlich gültigen Demo-Varianten werden verarbeitet.
      * INVALID bleibt als absichtlicher Fehlerfall für den Demonstrator verfügbar.
      */
+    boolean validConfiguration(AnalysisCommand command) {
+        return valid(command.configuration().get("engineManagementSystem"));
+    }
+
     private boolean valid(String value) {
         return "STANDARD".equalsIgnoreCase(value)
                 || "PREMIUM".equalsIgnoreCase(value)
