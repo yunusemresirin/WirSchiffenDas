@@ -26,8 +26,8 @@ services:
 
 resilience4j:
   circuitbreaker:
-    instances:
-      analysisServiceStarter:
+    configs:
+      analysisTarget:
         sliding-window-size: 2
         minimum-number-of-calls: 1
         permitted-number-of-calls-in-half-open-state: 1
@@ -37,6 +37,16 @@ resilience4j:
         register-health-indicator: true
         event-consumer-buffer-size: 10
 
+    instances:
+      analysisServiceStarterFluid:
+        base-config: analysisTarget
+      analysisServiceStarterThermal:
+        base-config: analysisTarget
+      analysisServiceStarterElectrical:
+        base-config: analysisTarget
+      analysisServiceStarterEngineManagement:
+        base-config: analysisTarget
+
 management:
   health:
     circuitbreakers:
@@ -44,7 +54,10 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
   endpoints:
     web:
       exposure:
         include: health,info,circuitbreakers,circuitbreakerevents
+

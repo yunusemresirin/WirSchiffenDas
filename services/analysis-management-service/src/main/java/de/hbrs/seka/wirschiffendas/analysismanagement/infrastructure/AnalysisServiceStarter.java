@@ -1,55 +1,50 @@
 package de.hbrs.seka.wirschiffendas.analysismanagement.infrastructure;
 
 import de.hbrs.seka.wirschiffendas.analysismanagement.domain.AlgorithmName;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/**
- * Startet den passenden Analyse-Service für einen Algorithmus und schützt den Aufruf per Circuit Breaker.
- */
+import java.util.Map;
+
+/** Isoliert Start- und Probe-Aufrufe je Zielservice mit demselben Circuit Breaker. */
 @Component
 public class AnalysisServiceStarter {
+    private final CircuitBreakerRegistry registry;
+    private final Map<AlgorithmName, RestClient> clients;
 
-    private final RestClient.Builder builder;
-    private final String fluidUrl;
-    private final String thermalUrl;
-    private final String electricalUrl;
-    private final String engineManagementUrl;
-
-    public AnalysisServiceStarter(
-            RestClient.Builder builder,
+    public AnalysisServiceStarter(CircuitBreakerRegistry registry, RestClient.Builder builder,
             @Value("${services.fluid.url}") String fluidUrl,
             @Value("${services.thermal.url}") String thermalUrl,
             @Value("${services.electrical.url}") String electricalUrl,
             @Value("${services.engine-management.url}") String engineManagementUrl) {
-        this.builder = builder;
-        this.fluidUrl = fluidUrl;
-        this.thermalUrl = thermalUrl;
-        this.electricalUrl = electricalUrl;
-        this.engineManagementUrl = engineManagementUrl;
+        this.registry = registry;
+        this.clients = Map.of(
+                AlgorithmName.FLUID, builder.clone().baseUrl(fluidUrl).build(),
+                AlgorithmName.THERMAL, builder.clone().baseUrl(thermalUrl).build(),
+                AlgorithmName.ELECTRICAL, builder.clone().baseUrl(electricalUrl).build(),
+                AlgorithmName.ENGINE_MANAGEMENT, builder.clone().baseUrl(engineManagementUrl).build());
     }
 
-    /**
-     * Sendet den Analyseauftrag an den zum Algorithmus gehörenden Service.
-     */
-    @CircuitBreaker(name = "analysisServiceStarter")
-    public void start(AlgorithmName algorithm, AnalysisCommand command) {
-        // Basis-URL des Zielservice anhand des Algorithmus wählen
-        String baseUrl = switch (algorithm) {
-            case FLUID -> fluidUrl;
-            case THERMAL -> thermalUrl;
-            case ELECTRICAL -> electricalUrl;
-            case ENGINE_MANAGEMENT -> engineManagementUrl;
+    public CircuitBreaker circuitBreaker(AlgorithmName algorithm) {
+        String name = switch (algorithm) {
+            case FLUID -> "analysisServiceStarterFluid";
+            case THERMAL -> "analysisServiceStarterThermal";
+            case ELECTRICAL -> "analysisServiceStarterElectrical";
+            case ENGINE_MANAGEMENT -> "analysisServiceStarterEngineManagement";
         };
+        return registry.circuitBreaker(name);
+    }
 
-        builder.baseUrl(baseUrl)
-                .build()
-                .post() // POST-Request
-                .uri("/internal/analyses") // interner Start-Endpunkt des Analyse-Service
-                .body(command) // Analyseauftrag als JSON serialisieren
-                .retrieve() // Request ausführen
-                .toBodilessEntity(); // Antwort ohne Body verarbeiten
+    public void start(AlgorithmName algorithm, AnalysisCommand command) {
+        circuitBreaker(algorithm).executeRunnable(() -> clients.get(algorithm).post()
+                .uri("/internal/analyses").body(command).retrieve().toBodilessEntity());
+    }
+
+    public void probe(AlgorithmName algorithm) {
+        circuitBreaker(algorithm).executeRunnable(() -> clients.get(algorithm).get()
+                .uri("/actuator/health/liveness").retrieve().toBodilessEntity());
     }
 }

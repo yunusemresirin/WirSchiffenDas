@@ -93,4 +93,45 @@ class AnalysisApplicationServiceRecoveryTest {
         verifyNoInteractions(configurationClient, serviceStarter);
         verify(repository, never()).findById(anyString());
     }
+
+    @Test
+    void failedStartIsNotCountedAndIsRetriedOnNextCycle() {
+        AnalysisRun run = recoverableRun();
+        doThrow(new RuntimeException("offline")).doNothing().when(serviceStarter)
+                .start(eq(AlgorithmName.THERMAL), any());
+        assertThat(service.resumeRecoverableFailures(AlgorithmName.THERMAL)).isZero();
+        assertThat(run.execution(AlgorithmName.THERMAL).getStatus()).isEqualTo(AnalysisStatus.FAILED);
+        assertThat(service.resumeRecoverableFailures(AlgorithmName.THERMAL)).isEqualTo(1);
+        assertThat(run.execution(AlgorithmName.THERMAL).getStatus()).isEqualTo(AnalysisStatus.RUNNING);
+        verify(serviceStarter, times(2)).start(eq(AlgorithmName.THERMAL), any());
+    }
+
+    @Test
+    void temporaryConfigurationOutageDoesNotLoseRecovery() {
+        AnalysisRun run = recoverableRun();
+        when(configurationClient.get("C-recovery"))
+                .thenThrow(new RuntimeException("configuration offline"))
+                .thenReturn(new ConfigurationSnapshot("C-recovery", "STANDARD", "PREMIUM",
+                        "STANDARD", "PREMIUM", "ADVANCED"));
+        assertThat(service.resumeRecoverableFailures(AlgorithmName.THERMAL)).isZero();
+        assertThat(run.execution(AlgorithmName.THERMAL).getStatus()).isEqualTo(AnalysisStatus.FAILED);
+        assertThat(service.resumeRecoverableFailures(AlgorithmName.THERMAL)).isEqualTo(1);
+        // Ein weiterer Recovery-Hook darf den bereits laufenden Schritt nicht doppelt starten.
+        assertThat(service.resumeRecoverableFailures(AlgorithmName.THERMAL)).isZero();
+        verify(serviceStarter).start(eq(AlgorithmName.THERMAL), any());
+    }
+
+    private AnalysisRun recoverableRun() {
+        AnalysisRun run = AnalysisRun.start("A-recovery", "C-recovery");
+        run.execution(AlgorithmName.FLUID).updateResult(AnalysisStatus.READY, AnalysisResult.OK, null);
+        run.execution(AlgorithmName.THERMAL).updateStatus(AnalysisStatus.FAILED, "thermal service unavailable");
+        run.recalculateOverallResult();
+        when(repository.findAll()).thenReturn(List.of(run));
+        when(repository.findById("A-recovery")).thenReturn(Optional.of(run));
+        when(configurationClient.get("C-recovery")).thenReturn(new ConfigurationSnapshot(
+                "C-recovery", "STANDARD", "PREMIUM", "STANDARD", "PREMIUM", "ADVANCED"));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        return run;
+    }
 }
+

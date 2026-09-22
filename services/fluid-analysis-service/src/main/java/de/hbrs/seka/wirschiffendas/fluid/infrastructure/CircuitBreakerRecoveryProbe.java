@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Führt in HALF_OPEN automatisch einen Liveness-Probe gegen den Thermal-Service aus.
@@ -16,7 +17,7 @@ public class CircuitBreakerRecoveryProbe {
     private final CircuitBreaker circuitBreaker;
     private final RestClient probeClient;
     private final AnalysisManagementClient managementClient;
-    private volatile boolean recoveryNotificationPending;
+    private final AtomicBoolean recoveryNotificationPending = new AtomicBoolean();
 
     public CircuitBreakerRecoveryProbe(
             CircuitBreakerRegistry circuitBreakerRegistry,
@@ -26,6 +27,11 @@ public class CircuitBreakerRecoveryProbe {
         this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("nextService");
         this.probeClient = builder.baseUrl(nextUrl).build();
         this.managementClient = managementClient;
+        circuitBreaker.getEventPublisher().onStateTransition(event -> {
+            if (event.getStateTransition() == CircuitBreaker.StateTransition.HALF_OPEN_TO_CLOSED) {
+                recoveryNotificationPending.set(true);
+            }
+        });
     }
 
     @Scheduled(fixedDelayString = "${circuit-breaker.recovery-probe-interval-ms:2000}")
@@ -38,21 +44,21 @@ public class CircuitBreakerRecoveryProbe {
                                 .retrieve()
                                 .toBodilessEntity());
 
-                if (circuitBreaker.getState() == CircuitBreaker.State.CLOSED) {
-                    recoveryNotificationPending = true;
-                }
             } catch (RuntimeException ignored) {
                 // Fehlgeschlagener Probe wird vom Breaker gezählt und führt wieder nach OPEN.
             }
         }
 
-        if (recoveryNotificationPending && circuitBreaker.getState() == CircuitBreaker.State.CLOSED) {
+        if (circuitBreaker.getState() == CircuitBreaker.State.CLOSED
+                && recoveryNotificationPending.compareAndSet(true, false)) {
             try {
                 managementClient.requestRecovery("THERMAL");
-                recoveryNotificationPending = false;
+
             } catch (RuntimeException ignored) {
-                // Analysis Management kann vorübergehend nicht erreichbar sein; beim nächsten Tick erneut versuchen.
+                // Ein neuer Zustandswechsel während des Requests darf nicht verloren gehen.
+                recoveryNotificationPending.set(true);
             }
         }
     }
 }
+

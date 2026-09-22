@@ -96,7 +96,7 @@ public class AnalysisApplicationService {
     /**
      * Wiederholt einen fehlgeschlagenen Algorithmus.
      */
-    public AnalysisRun retry(String analysisId, AlgorithmName algorithm) {
+    public synchronized AnalysisRun retry(String analysisId, AlgorithmName algorithm) {
         AnalysisRun run = find(analysisId);
         AlgorithmExecution execution = run.execution(algorithm);
 
@@ -149,8 +149,10 @@ public class AnalysisApplicationService {
         int resumed = 0;
         for (String analysisId : analysisIds) {
             try {
-                retry(analysisId, algorithm);
-                resumed++;
+                AnalysisRun run = retry(analysisId, algorithm);
+                if (run.execution(algorithm).getStatus() != AnalysisStatus.FAILED) {
+                    resumed++;
+                }
             } catch (RuntimeException ignored) {
                 // Der Lauf bleibt FAILED und kann beim nächsten Recovery-Zyklus erneut versucht werden.
             }
@@ -173,3 +175,4 @@ public class AnalysisApplicationService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Analysis not found"));
     }
 }
+
