@@ -140,7 +140,7 @@ public class AnalysisApplicationService {
      *
      * Fachliche FAILED-Ergebnisse werden bewusst nicht automatisch wiederholt.
      */
-    public int resumeRecoverableFailures(AlgorithmName algorithm) {
+    public RecoveryResult resumeRecoverableFailures(AlgorithmName algorithm) {
         List<String> analysisIds = repository.findAll().stream()
                 .filter(run -> isRecoverableFailure(run.execution(algorithm)))
                 .map(AnalysisRun::getAnalysisId)
@@ -149,13 +149,20 @@ public class AnalysisApplicationService {
         int resumed = 0;
         for (String analysisId : analysisIds) {
             try {
-                retry(analysisId, algorithm);
-                resumed++;
+                AnalysisRun retried = retry(analysisId, algorithm);
+                if (!isRecoverableFailure(retried.execution(algorithm))) {
+                    resumed++;
+                }
             } catch (RuntimeException ignored) {
                 // Der Lauf bleibt FAILED und kann beim nächsten Recovery-Zyklus erneut versucht werden.
             }
         }
-        return resumed;
+
+        int remaining = (int) repository.findAll().stream()
+                .filter(run -> isRecoverableFailure(run.execution(algorithm)))
+                .count();
+
+        return new RecoveryResult(resumed, remaining);
     }
 
     private boolean isRecoverableFailure(AlgorithmExecution execution) {
