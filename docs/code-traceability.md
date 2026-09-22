@@ -126,29 +126,27 @@ Circuit-Breaker-Pattern behandelt.
 
 **Nachweis (3 Ebenen):**
 
-**a) Annotation am Aufruf (Analysis Management → Analyse-Service):**
+**a) Zielservice-spezifischer Breaker (Analysis Management → Analyse-Service):**
 
-`services/analysis-management-service/.../infrastructure/AnalysisServiceStarter.java` Zeilen 31–45
+`services/analysis-management-service/.../infrastructure/AnalysisServiceStarter.java`
 
 ```java
-@CircuitBreaker(name = "analysisServiceStarter")
 public void start(AlgorithmName algorithm, AnalysisCommand command) {
-    String baseUrl = switch (algorithm) {
-        case FLUID -> fluidUrl;
-        case THERMAL -> thermalUrl;
-        case ELECTRICAL -> electricalUrl;
-        case ENGINE_MANAGEMENT -> engineManagementUrl;
-    };
+    CircuitBreaker circuitBreaker = circuitBreakers.get(algorithm);
+    RestClient client = clients.get(algorithm);
 
-    builder.baseUrl(baseUrl)
-            .build()
-            .post()
-            .uri("/internal/analyses")
-            .body(command)
-            .retrieve()
-            .toBodilessEntity();
+    circuitBreaker.executeRunnable(() ->
+            client.post()
+                    .uri("/internal/analyses")
+                    .body(command)
+                    .retrieve()
+                    .toBodilessEntity());
 }
 ```
+
+Analysis Management verwendet getrennte Breaker für `FLUID`, `THERMAL`,
+`ELECTRICAL` und `ENGINE_MANAGEMENT`. Dadurch kann ein fehlgeschlagener
+Retry zu einem Ziel nicht den Breaker eines anderen Zielservice öffnen oder schließen.
 
 **b) Annotation + Fallback (Analyse-Service → nächster Service):**
 
@@ -196,7 +194,8 @@ in den Half-Open-Zustand → ein Retry ist möglich.
 (`resilience4j-spring-boot3`).
 
 **Präsentations-Tipp:** `docker compose stop thermal-analysis-service`, Analyse
-starten, `THERMAL = FAILED` zeigen, dann Service starten und Retry ausführen.
+starten und `THERMAL = FAILED` mit `OPEN` zeigen. Danach Thermal wieder starten;
+die Recovery schließt den passenden Breaker und setzt den Lauf automatisch fort.
 
 ---
 
