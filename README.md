@@ -49,6 +49,16 @@ npm run dev
 
 Vite läuft standardmäßig unter `http://localhost:5173` und proxyt die API-/Actuator-Anfragen an die Backend-Services.
 
+### Konfigurationsvarianten
+
+Jedes Optional-Equipment-Feld akzeptiert `STANDARD`, `PREMIUM`, `ADVANCED`
+oder `INVALID`. Die ersten drei sind gültige Simulationswerte mit demselben
+PoC-Verhalten; sie sind keine unterschiedlichen physikalischen Motormodelle.
+`INVALID` darf gespeichert werden, führt aber beim zuständigen Worker zu
+`FAILED` und stoppt die nachfolgenden Schritte. Es wird nicht automatisch
+wiederholt. Andere Werte lehnt die Konfigurations-API mit HTTP 400 ab.
+Die Herkunft der Simulationswerte ist in `docs/requirements.md` erläutert.
+
 ## Lokal mit Maven prüfen
 
 ```bash
@@ -158,6 +168,30 @@ electrical-analysis-service-v0.2.0
 engine-management-analysis-service-v0.2.0
 ```
 
+### Image-Version und Git-Revision nachweisen
+
+Ein Git-Merge aktualisiert keine bereits veröffentlichten Docker-Hub-Images.
+Insbesondere ist das Beispiel `VERSION=0.1.0` keine Zusage über den enthaltenen
+Commit. Für die Prüfung des ausgecheckten Source-Stands lokal bauen:
+
+```bash
+VERSION=0.1.0 VCS_REF=$(git rev-parse HEAD) docker compose -f alternative_docker-compose.yml up --build -d
+COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
+```
+
+Das Release-Skript verlangt einen sauberen, committeten Arbeitsstand und setzt
+für alle sechs Backend-Images OCI-Labels mit Git-SHA, Version und Source-URL.
+Für jeden neuen Source-Stand eine neue Release-Version verwenden. Nach einem Pull
+kann die tatsächliche Revision geprüft werden, beispielsweise:
+
+```bash
+docker image inspect ysirin2s/seka-wirschiffendas:thermal-analysis-service-v0.2.0 --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}'
+```
+
+Ein lokaler Build ohne `VCS_REF` trägt ausdrücklich `unknown`; alte Images haben
+das Label gegebenenfalls noch nicht. Erst ein neu gebautes Release liefert diesen
+Nachweis. Ein Image-Digest kann zusätzlich für unveränderliche Deployments festgehalten werden.
+
 ### Retention: nur aktuelle und vorherige Version behalten
 
 Für die automatische Bereinigung alter Docker-Hub-Tags benötigt das Skript zusätzlich ein Docker-Hub Personal Access Token (PAT). Das Token wird nur als Umgebungsvariable verwendet und niemals in Git gespeichert.
@@ -195,7 +229,7 @@ Danach in der Web-UI:
 3. Fluid läuft erfolgreich durch.
 4. Der Aufruf Fluid → Thermal schlägt fehl.
 5. `THERMAL = FAILED`, `OverallResult = FAILED` und der Breaker Fluid → Thermal wird `OPEN` angezeigt.
-6. Nach ca. 10 Sekunden wird `HALF_OPEN` sichtbar.
+6. Nach ca. 10 Sekunden wird `HALF_OPEN` erreicht. Der Zustand kann zwischen zwei UI-Abfragen bereits wieder verlassen worden sein.
 
 Thermal wieder starten:
 
@@ -203,7 +237,9 @@ Thermal wieder starten:
 docker compose -f alternative_docker-compose.yml start thermal-analysis-service
 ```
 
-Danach ist **keine weitere Benutzeraktion nötig**. Im nächsten `HALF_OPEN`-Fenster prüft Fluid den Thermal-Service automatisch über dessen Liveness-Endpunkt. Ist Thermal wieder erreichbar, wechselt der Breaker nach `CLOSED` und Analysis Management setzt alle durch diesen technischen Ausfall unterbrochenen Läufe automatisch ab `THERMAL` fort. Bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt.
+Danach ist **keine weitere Benutzeraktion nötig**. Im nächsten `HALF_OPEN`-Fenster prüft Fluid den Thermal-Service automatisch über dessen Liveness-Endpunkt. Ist Thermal wieder erreichbar, wechselt der Breaker nach `CLOSED` und fordert Analysis Management zur Fortsetzung ab `THERMAL` auf. Auch ein regulärer erfolgreicher HALF_OPEN-Aufruf löst diesen Recovery-Hook aus.
+
+Zusätzlich prüft Analysis Management alle zwei Sekunden persistierte technische Fehler. Seine direkten Starts und Liveness-Probes haben je Zielservice einen eigenen Breaker. Dadurch werden ein verlorener Hook oder eine vorübergehend fehlgeschlagene Konfigurationsabfrage erneut versucht. Dieser unabhängige Wiederanlauf kann bereits vor dem Schließen des Breakers Fluid → Thermal beginnen. Bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt; ein HTTP 202 des Recovery-Hooks bestätigt die Bearbeitung der Anfrage, nicht den erfolgreichen Abschluss aller Läufe.
 
 Der Retry-Button bleibt als manueller Fallback erhalten, ist für die Circuit-Breaker-Demo aber nicht mehr erforderlich. Fachliche `FAILED`-Ergebnisse werden nicht automatisch wiederholt; Auto-Recovery gilt nur für Fehler mit Ursache `service unavailable`.
 
@@ -225,7 +261,7 @@ docker compose -f alternative_docker-compose.yml up --build -d
 COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
-Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem automatischem Circuit-Breaker-Recovery und Resume ohne manuellen Retry.
+Das Skript testet drei Szenarien: Happy Path, Thermal-Ausfall mit automatischer Recovery und Resume ohne manuellen Retry sowie `coolingSystem=INVALID` mit fachlichem Abbruch. Es prüft OPEN/CLOSED und anhand des Worker-Startlogs, dass Fluid beim Resume nicht erneut ausgeführt wird.
 
 Weitere Details: `docs/testing.md`.
 
@@ -258,3 +294,4 @@ Erwartetes Endergebnis: alle vier Algorithmen `READY / OK` und `overallResult = 
 - `docs/diagrams/Bausteinsicht.png` – Bausteinsicht
 - `docs/diagrams/Laufzeitsicht.jpeg` – Laufzeitsicht
 - `docs/diagrams/Verteilungssicht.jpeg` – Verteilungssicht
+

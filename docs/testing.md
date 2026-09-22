@@ -1,96 +1,77 @@
 # WirSchiffenDas – Teststrategie
 
-## Ziel
+## Ausführung
 
-Die Tests konzentrieren sich auf die für den Proof-of-Concept wichtigsten Anforderungen: Konfiguration, Analysezustand, erfolgreicher Analyseablauf, Ausfall eines Analyse-Service und Retry.
+Backend: Java 21 und Maven, `mvn clean verify` im Repository-Root.
+Frontend: Node 22.18+ oder 24, `cd frontend && npm ci && npm test && npm run build`.
+`npm test` verwendet den Node-Test-Runner; zusätzliche Testpakete sind nicht nötig.
 
-## Testpyramide
+## Automatisierte Nachweise
 
-| Ebene | Zweck | Umsetzung |
-|---|---|---|
-| Unit Test | Domänenlogik schnell prüfen | JUnit 5 / AssertJ |
-| Service Test | Erzeugen und Speichern von Konfigurationen prüfen | JUnit 5 / Mockito |
-| End-to-End | Zusammenspiel aller sechs Container prüfen | `scripts/e2e.sh` |
-| Demo | Manuelle Präsentation der Use Cases | Postman Collection |
+| Bereich | Tests und Grenzen |
+|---|---|
+| AnalysisRun | `AnalysisRunTest`: PENDING, FAILED, OK und Entfernen alter Resultate bei Retry |
+| Konfiguration | `ConfigurationApplicationServiceTest`: Erzeugen/Speichern einschließlich INVALID, mit gemocktem Repository |
+| Konfigurations-API | `ConfigurationControllerTest`: alle vier Katalogwerte einschließlich INVALID → 201; unbekannter Wert → 400 vor Persistenz |
+| Worker | `AnalysisWorkerTest` in allen vier Analyse-Services: STANDARD/PREMIUM/ADVANCED → READY; INVALID je zuständigem Feld → FAILED und kein Folgeaufruf |
+| Resume | `AnalysisApplicationServiceRecoveryTest`: Vorgänger erhalten, fachliche Fehler auslassen, fehlgeschlagenen Start nicht zählen, nach Konfigurationsausfall erneut versuchen, keine Wiederholung laufender Schritte |
+| Zielisolation | `AnalysisServiceStarterTest`: Thermal-Fehler blockiert Fluid nicht; Thermal-Recovery verwendet Thermal-Liveness |
+| Management-Recovery | `CircuitBreakerRecoveryProbeTest`: Wiederholung ohne neuen Zustandswechsel, getrennte Zielzustände |
+| Choreographie-Recovery | Probe-Tests in Fluid/Thermal/Electrical: fehlgeschlagene Liveness → OPEN; Erfolg → CLOSED; regulärer HALF_OPEN-Aufruf löst Recovery aus; verlorene Benachrichtigung wird wiederholt |
+| UI-Polling | `frontend/tests/polling.test.mjs`: fachlicher Abbruch trotz PENDING-Nachfolgern beendet Analysis-Polling; technische Fehler und laufende Schritte bleiben beobachtbar |
 
-## Automatisierte JUnit-Tests
-
-### Analysis Management
-
-`AnalysisRunTest` prüft insbesondere:
-
-- neue Analysen starten mit vier `PENDING`-Algorithmen,
-- ein fehlgeschlagener Algorithmus setzt `overallResult = FAILED`,
-- vier erfolgreiche Algorithmen ergeben `overallResult = OK`,
-- ein Retry-Zustand `RUNNING` entfernt ein altes Fehlerresultat.
-
-### Configuration Service
-
-`ConfigurationApplicationServiceTest` prüft:
-
-- beim Anlegen wird eine eindeutige `C-...`-ID erzeugt,
-- die übergebenen Konfigurationswerte bleiben erhalten,
-- die Konfiguration wird über das Repository gespeichert.
-
-Ausführen:
-
-```bash
-mvn clean verify
-```
+Die JVM-Tests verwenden für HTTP gezielt MockRestServiceServer bzw. MockMvc und
+für externe Dienste Mockito. Sie ersetzen keinen Container-Test. Runtime-Polling
+läuft unabhängig vom Analysis-Polling alle zwei Sekunden; Management → Fluid
+liest explizit den Fluid-Breaker und nicht den ersten beliebigen Breaker.
 
 ## Docker-End-to-End-Test
 
-Voraussetzungen:
-
-- Docker mit `docker compose`
-- `curl`
-- `jq`
-
-### Variante A – Docker-Hub-Images
+Voraussetzungen: Docker Compose, curl, jq und Bash. Im Repository-Root starten.
+Mit Docker-Hub-Images muss `VERSION` auf ein Release mit dem geprüften Source-Stand
+zeigen; ein Merge allein aktualisiert die Images nicht (siehe README, OCI-Labels).
 
 ```bash
 docker compose pull
-docker compose up -d
+docker compose up --build -d
 bash scripts/e2e.sh
 ```
 
-### Variante B – lokal gebaute Images
+Für lokal gebaute Images:
 
 ```bash
-docker compose -f alternative_docker-compose.yml up --build -d
+VERSION=0.1.0 VCS_REF=$(git rev-parse HEAD) docker compose -f alternative_docker-compose.yml up --build -d
 COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
-Das Skript prüft zwei Szenarien.
+### E2E-01 – Happy Path
 
-### Szenario E2E-01 – Happy Path
+Konfiguration mit gültigen Varianten anlegen und Analyse starten. Alle vier
+Algorithmen müssen READY/OK und das Gesamtergebnis OK erreichen.
 
-1. Engine-Konfiguration anlegen.
-2. Analyse starten.
-3. Auf Abschluss warten.
-4. Prüfen, dass `overallResult = OK` ist.
+### E2E-02 – Thermal-Ausfall, automatische Recovery und Resume
 
-### Szenario E2E-02 – Serviceausfall und Retry
+Thermal stoppen, neue Analyse starten, THERMAL/FAILED und Fluid→Thermal/OPEN
+abwarten. Thermal wieder starten, ohne den Retry-Endpunkt aufzurufen.
+Derselbe AnalysisRun muss vollständig READY/OK werden und der Breaker CLOSED.
+Das Log `Starting FLUID analysis <analysisId>` muss genau einmal vorkommen.
+HALF_OPEN wird in den Probe-Tests deterministisch nachgewiesen; ein kurzer
+HALF_OPEN-Zustand muss nicht zwischen zwei UI-Polls sichtbar sein.
 
-1. `thermal-analysis-service` stoppen.
-2. Neue Analyse starten.
-3. Warten, bis `THERMAL = FAILED` gemeldet wird.
-4. Thermal Service wieder starten.
-5. Nur `THERMAL` über den Retry-Endpunkt erneut starten.
-6. Prüfen, dass die Choreographie ab Thermal fortgesetzt wird und am Ende `overallResult = OK` ist.
+Management prüft technische Fehler zusätzlich regelmäßig mit eigenen Breakern
+je Ziel. Dadurch bleibt ein vorübergehend gescheiterter Wiederanlauf nicht liegen;
+Resume kann vor dem Schließen des Breakers des Vorgänger-Service beginnen.
 
-## Manuelle Prüfungsdemo
+### E2E-03 – Fachlich ungültige Konfiguration
 
-Für die mündliche Präsentation bleibt die Postman-Collection unter
-`postman/WirSchiffenDas.postman_collection.json` bestehen. Sie erlaubt denselben Ablauf sichtbar und schrittweise zu demonstrieren.
+`coolingSystem=INVALID` wird gespeichert. Fluid wird READY, Thermal FAILED,
+Electrical und Engine Management bleiben PENDING, das Gesamtergebnis wird FAILED.
+Nach weiteren Recovery-Ticks bleibt dieser fachliche Fehler unverändert.
 
-## Abdeckung der Qualitätsanforderungen
+## Manuelle Demo
 
-| Qualitätsanforderung | Nachweis |
-|---|---|
-| QR-01 Resilience | E2E-02 mit gestopptem Thermal Service |
-| QR-02 Monitorability | `GET /api/analyses/{analysisId}` |
-| QR-03 Independent Deployability | einzelner Container wird gestoppt/gestartet |
-| QR-04 Lose Kopplung | Kommunikation ausschließlich über REST |
-| QR-07 Testbarkeit | Unit Tests + E2E-Skript + Postman |
-| QR-08 Responsiveness | Analyse startet mit `202 Accepted`, Status bleibt währenddessen abrufbar |
+Die Web-UI zeigt Runtime-Erreichbarkeit und Breaker-Zustände. Der Retry-Button
+bleibt ein manueller Fallback. Die Postman-Collection unter
+`postman/WirSchiffenDas.postman_collection.json` bleibt für einzelne REST-Aufrufe
+verfügbar. Ein HTTP 202 vom Recovery-Hook ist kein Nachweis abgeschlossener Analyse;
+dafür den Status desselben AnalysisRun prüfen.

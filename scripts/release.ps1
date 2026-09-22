@@ -94,10 +94,19 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Docker ist nicht erreichbar. Bitte Docker Desktop starten.'
 }
 
+Write-Step 'Ermittle den reproduzierbaren Source-Stand'
+$revision = git rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw 'Git-Revision konnte nicht ermittelt werden.' }
+$workingTree = git status --porcelain
+if ($LASTEXITCODE -ne 0 -or $workingTree) {
+    throw 'Vor einem Release alle Source-Aenderungen committen; das Image-Label muss den gebauten Stand identifizieren.'
+}
+$env:VCS_REF = $revision.Trim()
+
 Write-Step 'Baue und pushe alle sechs Backend-Images'
 $env:VERSION = $Version
 
-docker compose -f $ComposeFile build --push
+docker compose -f $ComposeFile build --push @Services
 if ($LASTEXITCODE -ne 0) {
     throw 'Docker Compose Build/Push ist fehlgeschlagen.'
 }
@@ -155,4 +164,5 @@ else {
 }
 
 Write-Step 'Release abgeschlossen'
-Write-Host "Version v$Version wurde gebaut und gepusht."
+Write-Host "Version v$Version wurde aus Git-Revision $env:VCS_REF gebaut und gepusht."
+

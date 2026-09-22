@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: services/configuration-service/Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${VCS_REF:-unknown}
+        org.opencontainers.image.version: ${VERSION}
+        org.opencontainers.image.source: https://github.com/yunusemresirin/WirSchiffenDas
     image: ysirin2s/seka-wirschiffendas:configuration-service-v${VERSION}
     ports:
       - "8081:8081"
@@ -13,6 +17,10 @@ services:
     build:
       context: .
       dockerfile: services/analysis-management-service/Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${VCS_REF:-unknown}
+        org.opencontainers.image.version: ${VERSION}
+        org.opencontainers.image.source: https://github.com/yunusemresirin/WirSchiffenDas
     image: ysirin2s/seka-wirschiffendas:analysis-management-service-v${VERSION}
     ports:
       - "8082:8082"
@@ -31,6 +39,10 @@ services:
     build:
       context: .
       dockerfile: services/engine-management-analysis-service/Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${VCS_REF:-unknown}
+        org.opencontainers.image.version: ${VERSION}
+        org.opencontainers.image.source: https://github.com/yunusemresirin/WirSchiffenDas
     image: ysirin2s/seka-wirschiffendas:engine-management-analysis-service-v${VERSION}
     ports:
       - "8086:8086"
@@ -43,6 +55,10 @@ services:
     build:
       context: .
       dockerfile: services/electrical-analysis-service/Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${VCS_REF:-unknown}
+        org.opencontainers.image.version: ${VERSION}
+        org.opencontainers.image.source: https://github.com/yunusemresirin/WirSchiffenDas
     image: ysirin2s/seka-wirschiffendas:electrical-analysis-service-v${VERSION}
     ports:
       - "8085:8085"
@@ -57,6 +73,10 @@ services:
     build:
       context: .
       dockerfile: services/thermal-analysis-service/Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${VCS_REF:-unknown}
+        org.opencontainers.image.version: ${VERSION}
+        org.opencontainers.image.source: https://github.com/yunusemresirin/WirSchiffenDas
     image: ysirin2s/seka-wirschiffendas:thermal-analysis-service-v${VERSION}
     ports:
       - "8084:8084"
@@ -71,6 +91,10 @@ services:
     build:
       context: .
       dockerfile: services/fluid-analysis-service/Dockerfile
+      labels:
+        org.opencontainers.image.revision: ${VCS_REF:-unknown}
+        org.opencontainers.image.version: ${VERSION}
+        org.opencontainers.image.source: https://github.com/yunusemresirin/WirSchiffenDas
     image: ysirin2s/seka-wirschiffendas:fluid-analysis-service-v${VERSION}
     ports:
       - "8083:8083"
@@ -102,3 +126,4 @@ volumes:
 networks:
   default:
     name: wirschiffendas-network
+
