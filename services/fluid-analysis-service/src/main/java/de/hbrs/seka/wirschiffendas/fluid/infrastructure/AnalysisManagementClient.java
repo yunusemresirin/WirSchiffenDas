@@ -55,12 +55,20 @@ public class AnalysisManagementClient {
      * Fordert Analysis Management auf, durch Nichterreichbarkeit fehlgeschlagene
      * Läufe ab diesem Algorithmus automatisch fortzusetzen.
      */
-    public void requestRecovery(String algorithm) {
-        client
+    public RecoveryResponse requestRecovery(String algorithm) {
+        RecoveryResponse response = client
                 .post()
                 .uri("/internal/analyses/recover/{algorithm}", algorithm)
                 .retrieve()
-                .toBodilessEntity();
+                .body(RecoveryResponse.class);
+
+        if (response == null) {
+            throw new IllegalStateException("Recovery response must not be empty");
+        }
+        return response;
+    }
+
+    public record RecoveryResponse(int resumed, int remaining) {
     }
 
 }
