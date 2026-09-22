@@ -478,15 +478,23 @@ export default function App() {
 
   useEffect(() => {
     if (!analysis?.analysisId) return;
-    // Während eines technischen Ausfalls weiter pollen, damit eine automatische
-    // Circuit-Breaker-Recovery und das anschließende Resume sofort sichtbar werden.
-    const shouldKeepPolling = analysis.algorithms.some(
+    // Ein fachlicher FAILED-Zustand ist terminal: nachgelagerte PENDING-Schritte
+    // werden absichtlich nicht mehr ausgeführt. Technische "unavailable"-Fehler
+    // bleiben dagegen pollbar, damit Auto-Recovery sichtbar wird.
+    const hasTerminalBusinessFailure = analysis.algorithms.some(
       (item) =>
-        item.status === 'PENDING' ||
-        item.status === 'RUNNING' ||
-        (item.status === 'FAILED' &&
-          item.message?.toLowerCase().includes('unavailable')),
+        item.status === 'FAILED' &&
+        !item.message?.toLowerCase().includes('unavailable'),
     );
+    const shouldKeepPolling =
+      !hasTerminalBusinessFailure &&
+      analysis.algorithms.some(
+        (item) =>
+          item.status === 'PENDING' ||
+          item.status === 'RUNNING' ||
+          (item.status === 'FAILED' &&
+            item.message?.toLowerCase().includes('unavailable')),
+      );
     if (!shouldKeepPolling) return;
 
     const interval = window.setInterval(() => void refreshAnalysis(), 1000);
