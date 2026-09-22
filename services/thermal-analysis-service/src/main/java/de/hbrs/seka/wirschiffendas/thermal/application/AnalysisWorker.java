@@ -26,8 +26,7 @@ public class AnalysisWorker {
     public void execute(AnalysisCommand command) {
         managementClient.reportStatus(command.analysisId(), ALGORITHM, "RUNNING", null);
         if (!pause(command.analysisId())) return;
-        String coolingSystem = command.configuration().get("coolingSystem");
-        boolean ok = valid(coolingSystem);
+        boolean ok = validConfiguration(command);
         String result = ok ? "OK" : "FAILED";
         String message = ok
                 ? null
@@ -58,6 +57,10 @@ public class AnalysisWorker {
      * Nur die kontrollierten fachlich gültigen Demo-Varianten werden verarbeitet.
      * INVALID bleibt als absichtlicher Fehlerfall für den Demonstrator verfügbar.
      */
+    boolean validConfiguration(AnalysisCommand command) {
+        return valid(command.configuration().get("coolingSystem"));
+    }
+
     private boolean valid(String value) {
         return "STANDARD".equalsIgnoreCase(value)
                 || "PREMIUM".equalsIgnoreCase(value)
