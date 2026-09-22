@@ -59,9 +59,10 @@ class AnalysisApplicationServiceRecoveryTest {
         when(repository.saveAndFlush(ArgumentMatchers.any(AnalysisRun.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        int resumed = service.resumeRecoverableFailures(AlgorithmName.THERMAL);
+        RecoveryResult recovery = service.resumeRecoverableFailures(AlgorithmName.THERMAL);
 
-        assertThat(resumed).isEqualTo(1);
+        assertThat(recovery.resumed()).isEqualTo(1);
+        assertThat(recovery.remaining()).isZero();
         assertThat(run.execution(AlgorithmName.FLUID).getStatus()).isEqualTo(AnalysisStatus.READY);
         assertThat(run.execution(AlgorithmName.THERMAL).getStatus()).isEqualTo(AnalysisStatus.RUNNING);
         assertThat(run.execution(AlgorithmName.THERMAL).getResult()).isNull();
@@ -76,6 +77,33 @@ class AnalysisApplicationServiceRecoveryTest {
     }
 
     @Test
+    void keepsFailedResumePendingWhenRetryStillCannotStart() {
+        AnalysisRun run = AnalysisRun.start("A-3", "C-3");
+        run.execution(AlgorithmName.THERMAL)
+                .updateStatus(AnalysisStatus.FAILED, "thermal-analysis-service unavailable");
+        run.recalculateOverallResult();
+
+        ConfigurationSnapshot configuration = new ConfigurationSnapshot(
+                "C-3", "STANDARD", "PREMIUM", "STANDARD", "PREMIUM", "ADVANCED");
+
+        when(repository.findAll()).thenReturn(List.of(run));
+        when(repository.findById("A-3")).thenReturn(Optional.of(run));
+        when(configurationClient.get("C-3")).thenReturn(configuration);
+        when(repository.saveAndFlush(ArgumentMatchers.any(AnalysisRun.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("still unavailable"))
+                .when(serviceStarter)
+                .start(eq(AlgorithmName.THERMAL), any());
+
+        RecoveryResult recovery = service.resumeRecoverableFailures(AlgorithmName.THERMAL);
+
+        assertThat(recovery.resumed()).isZero();
+        assertThat(recovery.remaining()).isEqualTo(1);
+        assertThat(run.execution(AlgorithmName.THERMAL).getStatus()).isEqualTo(AnalysisStatus.FAILED);
+        assertThat(run.execution(AlgorithmName.THERMAL).getMessage()).containsIgnoringCase("unavailable");
+    }
+
+    @Test
     void doesNotAutomaticallyRetryBusinessFailure() {
         AnalysisRun run = AnalysisRun.start("A-2", "C-2");
         run.execution(AlgorithmName.THERMAL)
@@ -87,9 +115,10 @@ class AnalysisApplicationServiceRecoveryTest {
 
         when(repository.findAll()).thenReturn(List.of(run));
 
-        int resumed = service.resumeRecoverableFailures(AlgorithmName.THERMAL);
+        RecoveryResult recovery = service.resumeRecoverableFailures(AlgorithmName.THERMAL);
 
-        assertThat(resumed).isZero();
+        assertThat(recovery.resumed()).isZero();
+        assertThat(recovery.remaining()).isZero();
         verifyNoInteractions(configurationClient, serviceStarter);
         verify(repository, never()).findById(anyString());
     }
