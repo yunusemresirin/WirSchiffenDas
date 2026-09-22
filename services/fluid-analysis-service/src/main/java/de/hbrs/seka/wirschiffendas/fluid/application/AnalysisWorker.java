@@ -3,6 +3,8 @@ package de.hbrs.seka.wirschiffendas.fluid.application;
 import de.hbrs.seka.wirschiffendas.fluid.api.AnalysisCommand;
 import de.hbrs.seka.wirschiffendas.fluid.infrastructure.AnalysisManagementClient;
 import de.hbrs.seka.wirschiffendas.fluid.infrastructure.NextServiceClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class AnalysisWorker {
 
     private static final String ALGORITHM = "FLUID";
+    private static final Logger LOGGER = LoggerFactory.getLogger(AnalysisWorker.class);
 
     private final AnalysisManagementClient managementClient;
     private final NextServiceClient nextServiceClient;
@@ -27,6 +30,7 @@ public class AnalysisWorker {
      */
     @Async
     public void execute(AnalysisCommand command) {
+        LOGGER.info("Starting FLUID analysis {}", command.analysisId());
         managementClient.reportStatus(command.analysisId(), ALGORITHM, "RUNNING", null);
 
         if (!pause(command.analysisId())) {
