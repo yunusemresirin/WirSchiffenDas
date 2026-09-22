@@ -26,6 +26,11 @@ public class CircuitBreakerRecoveryProbe {
         this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("nextService");
         this.probeClient = builder.baseUrl(nextUrl).build();
         this.managementClient = managementClient;
+        this.circuitBreaker.getEventPublisher().onStateTransition(event -> {
+            if (event.getStateTransition() == CircuitBreaker.StateTransition.HALF_OPEN_TO_CLOSED) {
+                recoveryNotificationPending = true;
+            }
+        });
     }
 
     @Scheduled(fixedDelayString = "${circuit-breaker.recovery-probe-interval-ms:2000}")
@@ -38,9 +43,6 @@ public class CircuitBreakerRecoveryProbe {
                                 .retrieve()
                                 .toBodilessEntity());
 
-                if (circuitBreaker.getState() == CircuitBreaker.State.CLOSED) {
-                    recoveryNotificationPending = true;
-                }
             } catch (RuntimeException ignored) {
                 // Fehlgeschlagener Probe wird vom Breaker gezählt und führt wieder nach OPEN.
             }
