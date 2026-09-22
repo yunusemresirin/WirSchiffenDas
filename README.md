@@ -37,6 +37,10 @@ Funktionen:
 
 Die UI führt keine eigene Ablaufsteuerung durch. Sie verwendet ausschließlich die bestehenden REST-Endpunkte; die eigentliche Analyse bleibt choreographiert.
 
+### Konfigurationsvarianten
+
+Für jedes Optional-Equipment-Feld stehen die kontrollierten Varianten `STANDARD`, `PREMIUM`, `ADVANCED` und `INVALID` zur Verfügung. Die ersten drei Varianten sind fachlich gültige Demo-Werte. `INVALID` ist absichtlich speicherbar und dient als demonstrierbarer fachlicher Fehlerfall: Der zuständige Analyse-Worker beendet seinen Schritt mit `FAILED` und die nachgelagerten Schritte werden nicht gestartet.
+
 ### Frontend lokal starten
 
 Backend-Services auf Ports 8081–8086 starten und anschließend:
@@ -65,6 +69,10 @@ Alle sechs Backend-Images werden gemeinsam unter dem Docker-Hub-Repository `ysir
 ysirin2s/seka-wirschiffendas:configuration-service-v0.1.0
 ysirin2s/seka-wirschiffendas:fluid-analysis-service-v0.1.0
 ```
+
+Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.example`.
+
+**Reproduzierbarkeit:** Eine Versionsangabe in `.env` belegt allein nicht, welcher Git-Stand in den veröffentlichten Docker-Hub-Images steckt. Für den Nachweis eines konkreten Commits sollte daher entweder die Image-Version bzw. der Image-Digest zusammen mit dem Git-SHA in den Release-Notizen dokumentiert werden oder für die Prüfung die lokale Build-Variante mit `alternative_docker-compose.yml` verwendet werden.
 
 Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.example`:
 
@@ -195,7 +203,7 @@ Danach in der Web-UI:
 3. Fluid läuft erfolgreich durch.
 4. Der Aufruf Fluid → Thermal schlägt fehl.
 5. `THERMAL = FAILED`, `OverallResult = FAILED` und der Breaker Fluid → Thermal wird `OPEN` angezeigt.
-6. Nach ca. 10 Sekunden wird `HALF_OPEN` sichtbar.
+6. Nach ca. 10 Sekunden kann `HALF_OPEN` kurz sichtbar werden. Da die Recovery-Probe sofort entscheiden kann und die UI alle zwei Sekunden pollt, ist dieser Übergangszustand nicht garantiert sichtbar.
 
 Thermal wieder starten:
 
@@ -225,7 +233,7 @@ docker compose -f alternative_docker-compose.yml up --build -d
 COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
-Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem automatischem Circuit-Breaker-Recovery und Resume ohne manuellen Retry.
+Das Skript testet drei Szenarien: den Happy Path, den Ausfall von `thermal-analysis-service` mit anschließendem automatischem Circuit-Breaker-Recovery und Resume ohne manuellen Retry sowie den fachlichen `INVALID`-Fall.
 
 Weitere Details: `docs/testing.md`.
 
