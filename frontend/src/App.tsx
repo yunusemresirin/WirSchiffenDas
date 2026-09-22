@@ -1,3 +1,4 @@
+import { shouldPollAnalysis } from './polling';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -480,13 +481,7 @@ export default function App() {
     if (!analysis?.analysisId) return;
     // Während eines technischen Ausfalls weiter pollen, damit eine automatische
     // Circuit-Breaker-Recovery und das anschließende Resume sofort sichtbar werden.
-    const shouldKeepPolling = analysis.algorithms.some(
-      (item) =>
-        item.status === 'PENDING' ||
-        item.status === 'RUNNING' ||
-        (item.status === 'FAILED' &&
-          item.message?.toLowerCase().includes('unavailable')),
-    );
+    const shouldKeepPolling = shouldPollAnalysis(analysis);
     if (!shouldKeepPolling) return;
 
     const interval = window.setInterval(() => void refreshAnalysis(), 1000);
@@ -750,3 +745,4 @@ export default function App() {
     </Box>
   );
 }
+

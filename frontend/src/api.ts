@@ -107,13 +107,16 @@ const breakerStates = new Set<CircuitBreakerState>([
 /**
  * Sucht rekursiv nach einem Circuit-Breaker-Snapshot in der Actuator-Antwort.
  */
-function findCircuitBreaker(value: unknown): CircuitBreakerSnapshot | null {
+function findCircuitBreaker(value: unknown, name?: string): CircuitBreakerSnapshot | null {
   if (!value || typeof value !== 'object') {
     return null;
   }
 
   const record = value as Record<string, unknown>;
-  const state = record.state;
+  if (name && Object.hasOwn(record, name)) {
+    return findCircuitBreaker(record[name]);
+  }
+  const state = name ? undefined : record.state;
 
   if (typeof state === 'string' && breakerStates.has(state as CircuitBreakerState)) {
     return {
@@ -131,7 +134,7 @@ function findCircuitBreaker(value: unknown): CircuitBreakerSnapshot | null {
   }
 
   for (const child of Object.values(record)) {
-    const result = findCircuitBreaker(child);
+    const result = findCircuitBreaker(child, name);
     if (result) {
       return result;
     }
@@ -195,7 +198,8 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
           : response.ok
             ? 'UP'
             : 'DOWN',
-      circuitBreaker: findCircuitBreaker(payload),
+      circuitBreaker: findCircuitBreaker(payload,
+        key === 'analysis-management' ? 'analysisServiceStarterFluid' : 'nextService'),
       checkedAt: new Date().toISOString(),
     };
   } catch {
@@ -217,3 +221,4 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
 export async function loadSystemHealth(): Promise<ServiceHealth[]> {
   return Promise.all(serviceKeys.map(fetchHealth));
 }
+
