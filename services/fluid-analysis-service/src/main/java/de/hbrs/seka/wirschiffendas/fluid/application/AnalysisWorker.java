@@ -33,11 +33,8 @@ public class AnalysisWorker {
             return;
         }
 
-        String oilSystem = command.configuration().get("oilSystem");
-        String fuelSystem = command.configuration().get("fuelSystem");
-
         // Beide Fluid-Systeme müssen eine der erlaubten Varianten verwenden.
-        boolean ok = valid(oilSystem) && valid(fuelSystem);
+        boolean ok = validConfiguration(command);
         String result = ok ? "OK" : "FAILED";
         String message = ok
                 ? null
@@ -73,6 +70,11 @@ public class AnalysisWorker {
      * Nur die kontrollierten fachlich gültigen Demo-Varianten werden verarbeitet.
      * INVALID bleibt als absichtlicher Fehlerfall für den Demonstrator verfügbar.
      */
+    boolean validConfiguration(AnalysisCommand command) {
+        return valid(command.configuration().get("oilSystem"))
+                && valid(command.configuration().get("fuelSystem"));
+    }
+
     private boolean valid(String value) {
         return "STANDARD".equalsIgnoreCase(value)
                 || "PREMIUM".equalsIgnoreCase(value)
