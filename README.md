@@ -74,7 +74,7 @@ Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.exa
 
 **Reproduzierbarkeit:** Eine Versionsangabe in `.env` belegt allein nicht, welcher Git-Stand in den veröffentlichten Docker-Hub-Images steckt. Für den Nachweis eines konkreten Commits sollte daher entweder die Image-Version bzw. der Image-Digest zusammen mit dem Git-SHA in den Release-Notizen dokumentiert werden oder für die Prüfung die lokale Build-Variante mit `alternative_docker-compose.yml` verwendet werden.
 
-Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.example`:
+Vorlage anlegen:
 
 ```bash
 cp .env.example .env
