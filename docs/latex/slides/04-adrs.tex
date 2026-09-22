@@ -140,19 +140,15 @@ public void execute(AnalysisCommand command) {
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.54\textwidth}
       \begin{lstlisting}[style=java]
-@CircuitBreaker(name = "analysisServiceStarter")
 public void start(AlgorithmName algorithm,
                   AnalysisCommand command) {
-    String baseUrl = switch (algorithm) {
-        case FLUID -> fluidUrl;
-        case THERMAL -> thermalUrl;
-        case ELECTRICAL -> electricalUrl;
-        case ENGINE_MANAGEMENT -> engineManagementUrl;
-    };
+    CircuitBreaker cb = circuitBreakers.get(algorithm);
+    RestClient client = clients.get(algorithm);
 
-    builder.baseUrl(baseUrl).build()
-            .post().uri("/internal/analyses")
-            .body(command).retrieve().toBodilessEntity();
+    cb.executeRunnable(() ->
+        client.post().uri("/internal/analyses")
+              .body(command).retrieve()
+              .toBodilessEntity());
 }
       \end{lstlisting}
       \srcfile{.../infrastructure/AnalysisServiceStarter.java}
@@ -162,11 +158,10 @@ public void start(AlgorithmName algorithm,
       \begin{itemize}
         \item Umsetzung von \textbf{Isolation of Failures}.
         \item Der Fehler bleibt lokal im aufrufenden Service behandelbar.
-        \item Zwei Breaker-Instanzen:
-          \begin{itemize}
-            \item \code{analysisServiceStarter} (Management $\rightarrow$ Analyse)
-            \item \code{nextService} (Analyse $\rightarrow$ nächster Service)
-          \end{itemize}
+        \item Analysis Management nutzt je Zielservice einen eigenen Breaker
+          (Fluid, Thermal, Electrical, Engine Management).
+        \item \code{nextService} schützt die jeweilige Choreographie-Kante
+          zum nächsten Analyse-Service.
       \end{itemize}
       \begin{block}{Detail}
         \small Vollständiger Code + Fallback: siehe TA-04.
