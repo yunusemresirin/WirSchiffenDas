@@ -71,6 +71,30 @@ wait_for_overall_result() {
   return 1
 }
 
+wait_for_breaker_state() {
+  local service_url="$1"
+  local breaker="$2"
+  local expected="$3"
+  for _ in $(seq 1 "$TIMEOUT_SECONDS"); do
+    local state
+    state="$(curl -fsS "$service_url/actuator/circuitbreakers" 2>/dev/null |
+      jq -r --arg breaker "$breaker" '.circuitBreakers[$breaker].state // empty' || true)"
+    if [[ "$state" == "$expected" ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Circuit Breaker $breaker erreichte Zustand $expected nicht." >&2
+  return 1
+}
+
+count_fluid_executions() {
+  local analysis_id="$1"
+  local logs
+  logs="$(docker compose logs fluid-analysis-service 2>/dev/null || true)"
+  grep -F -c "Starting FLUID analysis $analysis_id" <<<"$logs" || true
+}
+
 wait_for_algorithm_status() {
   local analysis_id="$1"
   local algorithm="$2"
@@ -130,7 +154,14 @@ if [[ "$(jq -r '.overallResult' <<<"$failed_body")" != "FAILED" ]]; then
   exit 1
 fi
 
-echo "Thermal-Ausfall wurde korrekt erkannt."
+wait_for_breaker_state "http://localhost:8083" "nextService" "OPEN"
+fluid_executions_before="$(count_fluid_executions "$analysis_id")"
+if [[ "$fluid_executions_before" != "1" ]]; then
+  echo "Fluid sollte vor der Recovery genau einmal ausgeführt worden sein, erhalten: $fluid_executions_before" >&2
+  exit 1
+fi
+
+echo "Thermal-Ausfall und OPEN-Breaker wurden korrekt erkannt."
 
 docker compose start thermal-analysis-service >/dev/null
 wait_for_health "http://localhost:8084" "thermal-analysis-service"
@@ -144,7 +175,14 @@ if [[ "$ready_count" != "4" ]]; then
   exit 1
 fi
 
-echo "Automatische Recovery erfolgreich: $analysis_id"
+wait_for_breaker_state "http://localhost:8083" "nextService" "CLOSED"
+fluid_executions_after="$(count_fluid_executions "$analysis_id")"
+if [[ "$fluid_executions_after" != "1" ]]; then
+  echo "Fluid darf beim Resume ab THERMAL nicht erneut ausgeführt werden, erhalten: $fluid_executions_after" >&2
+  exit 1
+fi
+
+echo "Automatische Recovery erfolgreich; Fluid blieb bei genau einer Ausführung: $analysis_id"
 
 echo
 echo "=== E2E-03 INVALID-Konfigurationsvariante wird fachlich abgelehnt ==="
