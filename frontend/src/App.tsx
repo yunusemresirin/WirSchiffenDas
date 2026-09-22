@@ -58,6 +58,7 @@ import type {
 const configurationVariants: Array<{
   value: ConfigurationVariant;
   label: string;
+  breakerName: string;
 }> = [
   { value: 'STANDARD', label: 'STANDARD' },
   { value: 'PREMIUM', label: 'PREMIUM' },
@@ -98,10 +99,11 @@ const breakerEdges: Array<{
     source: 'analysis-management',
     target: 'fluid',
     label: 'Start / Retry',
+    breakerName: 'analysisServiceStarterFluid',
   },
-  { source: 'fluid', target: 'thermal', label: 'Next' },
-  { source: 'thermal', target: 'electrical', label: 'Next' },
-  { source: 'electrical', target: 'engine-management', label: 'Next' },
+  { source: 'fluid', target: 'thermal', label: 'Next', breakerName: 'nextService' },
+  { source: 'thermal', target: 'electrical', label: 'Next', breakerName: 'nextService' },
+  { source: 'electrical', target: 'engine-management', label: 'Next', breakerName: 'nextService' },
 ];
 
 /**
@@ -361,6 +363,8 @@ function AlgorithmCard({
  * Karte mit Erreichbarkeit und Circuit-Breaker-Zustand eines Service.
  */
 function RuntimeHealthCard({ health }: { health: ServiceHealth }) {
+  const breakerEntries = Object.entries(health.circuitBreakers);
+
   return (
     <Paper variant="outlined" sx={{ p: 1.5, minWidth: 180 }}>
       <Stack spacing={1}>
@@ -372,13 +376,23 @@ function RuntimeHealthCard({ health }: { health: ServiceHealth }) {
           color={health.reachable ? 'success' : 'error'}
           variant={health.reachable ? 'outlined' : 'filled'}
         />
-        {health.circuitBreaker && (
+        {breakerEntries.length === 1 && health.circuitBreaker && (
           <Tooltip title={`Actuator status: ${health.actuatorStatus}`}>
             <Chip
               size="small"
               icon={<SettingsInputComponentRoundedIcon />}
               label={`CB ${health.circuitBreaker.state}`}
               color={breakerColor(health.circuitBreaker.state)}
+            />
+          </Tooltip>
+        )}
+        {breakerEntries.length > 1 && (
+          <Tooltip title="Zielservice-spezifische Breaker werden unten an den Kanten angezeigt.">
+            <Chip
+              size="small"
+              icon={<SettingsInputComponentRoundedIcon />}
+              label={`${breakerEntries.length} Circuit Breakers`}
+              variant="outlined"
             />
           </Tooltip>
         )}
@@ -394,13 +408,15 @@ function BreakerEdge({
   sourceHealth,
   target,
   label,
+  breakerName,
 }: {
   sourceHealth?: ServiceHealth;
   target: ServiceKey;
   label: string;
+  breakerName: string;
 }) {
-  const state = sourceHealth?.circuitBreaker?.state ?? 'UNKNOWN';
-  const snapshot = sourceHealth?.circuitBreaker;
+  const snapshot = sourceHealth?.circuitBreakers[breakerName];
+  const state = snapshot?.state ?? 'UNKNOWN';
 
   return (
     <Stack
@@ -720,6 +736,7 @@ export default function App() {
                           sourceHealth={healthByKey.get(edge.source)}
                           target={edge.target}
                           label={edge.label}
+                          breakerName={edge.breakerName}
                         />
                         <Paper variant="outlined" sx={{ p: 2, width: 180 }}>
                           <Typography fontWeight={700}>{serviceLabels[edge.target]}</Typography>
