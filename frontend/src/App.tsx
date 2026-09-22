@@ -94,6 +94,7 @@ const breakerEdges: Array<{
   source: ServiceKey;
   target: ServiceKey;
   label: string;
+  breakerName: string;
 }> = [
   {
     source: 'analysis-management',
