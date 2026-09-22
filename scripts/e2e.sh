@@ -28,15 +28,16 @@ wait_for_health() {
 }
 
 create_configuration() {
+  local cooling_system="${1:-STANDARD}"
   curl -fsS -X POST "$CONFIG_URL/api/configurations" \
     -H 'Content-Type: application/json' \
-    -d '{
-      "oilSystem": "STANDARD",
-      "fuelSystem": "PREMIUM",
-      "coolingSystem": "STANDARD",
-      "electricalSystem": "PREMIUM",
-      "engineManagementSystem": "ADVANCED"
-    }' | jq -r '.configurationId'
+    -d "{
+      \"oilSystem\": \"STANDARD\",
+      \"fuelSystem\": \"PREMIUM\",
+      \"coolingSystem\": \"$cooling_system\",
+      \"electricalSystem\": \"PREMIUM\",
+      \"engineManagementSystem\": \"ADVANCED\"
+    }" | jq -r '.configurationId'
 }
 
 start_analysis() {
@@ -147,7 +148,7 @@ echo "Automatische Recovery erfolgreich: $analysis_id"
 
 echo
 echo "=== E2E-03 INVALID-Konfigurationsvariante wird fachlich abgelehnt ==="
-configuration_id="$(create_invalid_configuration)"
+configuration_id="$(create_configuration INVALID)"
 analysis_id="$(start_analysis "$configuration_id")"
 invalid_body="$(wait_for_algorithm_status "$analysis_id" "THERMAL" "FAILED")"
 
